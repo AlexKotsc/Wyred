@@ -40,9 +40,9 @@ public class WifiP2PReceiver extends BroadcastReceiver {
 
             Log.d(wifiP2P.logtag, "Peers changed!");
 
-            if(mManager != null){
+            /*if(mManager != null){
                 mManager.requestPeers(mChannel, new PeerListener(wifiP2P));
-            }
+            }*/
 
             // Call WifiP2pManager.requestPeers() to get a list of current peers
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
