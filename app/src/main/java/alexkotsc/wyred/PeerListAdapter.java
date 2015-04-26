@@ -38,7 +38,26 @@ public class PeerListAdapter extends ArrayAdapter<WifiP2pDevice> {
         peerNameText.setText(values.get(position).deviceName);
         peerAddressText.setText(values.get(position).deviceAddress);
         peerOtherText.setText(values.get(position).primaryDeviceType);
-        peerStatusText.setText("Status: " + values.get(position).status);
+        peerOtherText.setEnabled(false);
+        switch(values.get(position).status){
+            case WifiP2pDevice.AVAILABLE:
+                peerStatusText.setText("Status: Available");
+                break;
+            case WifiP2pDevice.CONNECTED:
+                peerStatusText.setText("Status: Connected");
+                break;
+            case WifiP2pDevice.FAILED:
+                peerStatusText.setText("Status: Failed");
+                break;
+            case WifiP2pDevice.INVITED:
+                peerStatusText.setText("Status: Invited");
+                break;
+            case WifiP2pDevice.UNAVAILABLE:
+                peerStatusText.setText("Status: Unavailable");
+                break;
+            default:
+                peerStatusText.setText("Status: unknown (" + values.get(position).status + ")");
+        }
 
         return rowView;
     }

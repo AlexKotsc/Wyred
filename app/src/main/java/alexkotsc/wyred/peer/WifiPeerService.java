@@ -1,5 +1,6 @@
 package alexkotsc.wyred.peer;
 
+import android.annotation.TargetApi;
 import android.app.IntentService;
 import android.app.Service;
 import android.content.Context;
@@ -7,10 +8,15 @@ import android.content.Intent;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import alexkotsc.wyred.WifiP2P;
 
@@ -26,6 +32,8 @@ public class WifiPeerService extends Service {
     private WifiP2P activity;
     private WifiP2pManager mManager = null;
     private WifiP2pManager.Channel mChannel;
+    private String deviceName;
+    private boolean serviceStarted = false;
 
     public WifiPeerService(){
 
@@ -56,6 +64,8 @@ public class WifiPeerService extends Service {
                 case PEERS_CHANGED:
                     requestPeers();
                     break;
+                case DEVICE_CHANGED:
+                    deviceName = intent.getStringExtra("deviceName");
                 default:
                     Log.d(WifiP2P.logtag, "Unsupported action: " + action);
             }
@@ -73,9 +83,39 @@ public class WifiPeerService extends Service {
         }
     }
 
-    private void requestPeers() {
+    public void requestPeers() {
         if(mManager != null){
             mManager.requestPeers(mChannel, new PeerListener());
+        }
+    }
+
+    private void startServiceRegistration(){
+        if(!serviceStarted){
+
+            Map record = new HashMap();
+
+            if(deviceName==null){
+                record.put("name", "unknown");
+            } else {
+                record.put("name", deviceName);
+            }
+
+            record.put("available", "visible");
+
+            WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance("_wyredapp", "_aodv._tcp", record);
+
+            /*mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener(){
+
+                @Override
+                public void onSuccess() {
+                    Log.d(WifiP2P.logtag, "Local service started succesfully");
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.e(WifiP2P.logtag, "Local service could not be started: " + reason);
+                }
+            });*/
         }
     }
 
@@ -92,18 +132,9 @@ public class WifiPeerService extends Service {
             Log.d(WifiP2P.logtag, "WifiP2pManager initialized");
             mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
             mChannel = mManager.initialize(this,getMainLooper(), null);
-            mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    setState(true);
-                }
+            discoverPeers();
 
-                @Override
-                public void onFailure(int reason) {
-                    setState(false);
-                    Toast.makeText(getApplicationContext(), ("Failed to utilize Wifi-Direct: " + reason), Toast.LENGTH_SHORT);
-                }
-            });
+           // startServiceRegistration();
         }
 
         return binder;
@@ -112,6 +143,24 @@ public class WifiPeerService extends Service {
     public void setActivity(WifiP2P wifiP2P) {
         this.activity = wifiP2P;
         this.activity.setP2PState(P2PEnabled);
+    }
+
+    public void discoverPeers() {
+        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                setState(true);
+                Log.d("WifiP2P", "Succesfully initiated peer discovery");
+                requestPeers();
+            }
+
+
+            @Override
+            public void onFailure(int reason) {
+                setState(false);
+                Toast.makeText(getApplicationContext(), ("Failed to utilize Wifi-Direct: " + reason), Toast.LENGTH_SHORT);
+            }
+        });
     }
 
     public class WifiPeerServiceBinder extends Binder {
@@ -127,7 +176,6 @@ public class WifiPeerService extends Service {
 
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peers) {
-
             receivePeers(peers);
         }
     }

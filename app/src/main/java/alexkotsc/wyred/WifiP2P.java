@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -38,10 +39,6 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
     private boolean P2PState = false;
 
-    private WifiP2pManager mManager;
-    private WifiP2pManager.Channel mChannel;
-    private BroadcastReceiver mReceiver;
-    private IntentFilter mIntentFilter;
     private List<WifiP2pDevice> peers;
 
     private HashMap<String, WifiP2pDevice> oldpeers;
@@ -57,17 +54,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
         oldpeers = new HashMap<>();
 
-        /*mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, getMainLooper(), null);
-        mReceiver = new WifiP2PReceiver(mManager, mChannel, this);*/
-
         peers = new ArrayList<>();
-
-        /*mIntentFilter = new IntentFilter();
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION  );*/
 
         Button searchBtn = (Button) findViewById(R.id.wifiPeerSearchBtn);
         searchBtn.setOnClickListener(new searchBtnOnClickListener(this));
@@ -101,19 +88,13 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_wifi_p2, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -137,7 +118,6 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     @Override
     public void onResume(){
         super.onResume();
-        //registerReceiver(mReceiver, mIntentFilter);
     }
 
     @Override
@@ -166,30 +146,14 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
         Log.d(logtag, "Discovering peers");
 
-        Intent i = new Intent(this, WifiPeerService.class);
+        wifiPeerService.discoverPeers();
+
+        /*Intent i = new Intent(this, WifiPeerService.class);
         Bundle b = new Bundle();
         b.putString("action", WifiPeerService.WifiAction.PEERS_CHANGED.toString());
         i.putExtras(b);
-        startService(i);
+        startService(i);*/
 
-
-
-        /*mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.d(WifiP2P.logtag, "ActionListener - Success");
-
-                //peers.add(new WifiP2pDevice());
-
-                //receivePeers(new WifiP2pDeviceList());
-
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                Log.d(WifiP2P.logtag, "ActionListener - Failure: " + reason);
-            }
-        });*/
     }
 
     public void receivePeers(WifiP2pDeviceList peerlist){
@@ -201,7 +165,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
         Collection<WifiP2pDevice> peerCollection = peerlist.getDeviceList();
 
         for(WifiP2pDevice wd : peerCollection){
-            Log.d(logtag, "Peer: " + wd.toString());
+            Log.d(logtag, "Peer: " + wd.deviceName);
             peers.add(wd);
             oldpeers.put(wd.deviceAddress, wd);
         }
@@ -234,4 +198,6 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
             isWifiBound = false;
         }
     };
+
+
 }
