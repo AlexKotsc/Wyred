@@ -1,18 +1,14 @@
 package alexkotsc.wyred;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pManager;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,7 +17,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +47,8 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_wi_fi_p2_p);
 
+
+
         oldpeers = new HashMap<>();
 
         peers = new ArrayList<>();
@@ -74,7 +71,8 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
                 WifiP2pDevice clickedPeer = oldpeers.get(deviceAddress.toString());
 
                 if(clickedPeer != null){
-                    Toast.makeText(getApplicationContext(), clickedPeer.deviceName + " : clicked.", Toast.LENGTH_SHORT).show();
+                    wifiPeerService.connect(clickedPeer);
+                    //Toast.makeText(getApplicationContext(), clickedPeer.deviceName + " : clicked.", Toast.LENGTH_SHORT).show();
                     Log.d(logtag, clickedPeer.deviceName + " clicked");
                 } else {
                     Log.e(logtag, "Peer was not found in map.");
@@ -146,7 +144,8 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
         Log.d(logtag, "Discovering peers");
 
-        wifiPeerService.discoverPeers();
+        //wifiPeerService.discoverPeers();
+        wifiPeerService.discoverServices();
 
         /*Intent i = new Intent(this, WifiPeerService.class);
         Bundle b = new Bundle();

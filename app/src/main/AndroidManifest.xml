@@ -33,12 +33,6 @@
             android:label="@string/app_name" >
         </activity>
 
-        <receiver
-            android:name=".WifiP2PReceiver"
-            android:enabled="true"
-            android:exported="true" >
-        </receiver>
-
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main" >
@@ -58,7 +52,7 @@
             android:exported="false"/>
 
         <receiver
-            android:name=".peer.PeerReceiver">
+            android:name=".peer.WifiPeerService$mReceiver">
             <intent-filter>
                 <action android:name="android.net.wifi.p2p.STATE_CHANGED" />
                 <action android:name="android.net.wifi.p2p.PEERS_CHANGED" />
