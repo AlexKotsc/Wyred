@@ -42,9 +42,17 @@ public class WifiPeerService extends Service {
     private final WifiP2pManager.DnsSdTxtRecordListener dnsSdTxtRecordListener = new mDnsTxtRecordListener();
     private final WifiP2pManager.DnsSdServiceResponseListener dnsSdServiceResponseListener = new mDnsResponseListener();
 
-    public class mReceiver extends BroadcastReceiver {
+    public static class mReceiver extends BroadcastReceiver {
 
-        public mReceiver(){}
+        WifiPeerService wifiPeerService;
+
+        public mReceiver(WifiPeerService ws){
+            wifiPeerService = ws;
+        }
+
+        public mReceiver(){
+
+        }
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -53,17 +61,17 @@ public class WifiPeerService extends Service {
             if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
                 int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
                 if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED){
-                    changeState(true);
+                    wifiPeerService.changeState(true);
                 } else {
-                    changeState(false);
+                    wifiPeerService.changeState(false);
                 }
             } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
-                requestPeers();
+                wifiPeerService.requestPeers();
             } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-                connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
+                wifiPeerService.connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
                 WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
-                thisDevice = device;
+                wifiPeerService.thisDevice = device;
             }
         }
     }
