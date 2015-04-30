@@ -199,4 +199,20 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     };
 
 
+    public void receivePeerList(HashMap<String, WifiP2pDevice> currentPeers) {
+        Log.d(logtag, "Receiving Wyred services");
+        if(currentPeers != null) {
+
+            List<WifiP2pDevice> tempPeers = new ArrayList<>(currentPeers.values());
+
+            for(WifiP2pDevice wd : currentPeers.values()){
+                Log.d(logtag, "Peer: " + wd.deviceName);
+                peers.add(wd);
+                oldpeers.put(wd.deviceAddress, wd);
+            }
+
+            ListView lw = (ListView) findViewById(R.id.listView);
+            lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, tempPeers));
+        }
+    }
 }

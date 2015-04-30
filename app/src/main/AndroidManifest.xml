@@ -50,15 +50,7 @@
         <service
             android:name=".peer.WifiPeerService"
             android:exported="false" />
-
-        <receiver android:name=".peer.WifiPeerService$mReceiver" >
-            <intent-filter>
-                <action android:name="android.net.wifi.p2p.STATE_CHANGED" />
-                <action android:name="android.net.wifi.p2p.PEERS_CHANGED" />
-                <action android:name="android.net.wifi.p2p.THIS_DEVICE_CHANGED" />
-                <action android:name="android.net.wifi.p2p.CONNECTION_STATE_CHANGE" />
-            </intent-filter>
-        </receiver>
+        <receiver android:name=".peer.WifiPeerService$mReceiver"/>
 
         <activity
             android:name=".KeyGeneratorActivity"
