@@ -9,4 +9,5 @@
     <string name="title_activity_wifi_p2_p">WifiP2P</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_blep2_p">BLEP2P</string>
+    <string name="title_activity_key_generator">KeyGenerator</string>
 </resources>

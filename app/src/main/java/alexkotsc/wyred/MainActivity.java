@@ -42,6 +42,15 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
+        Button gotoKeyGeneratorBtn = (Button) findViewById(R.id.mainGeneratorActivityBtn);
+        gotoKeyGeneratorBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getApplication(), KeyGeneratorActivity.class);
+                startActivity(i);
+            }
+        });
+
         if(!wifiState()){
             Toast.makeText(this, "Wi-Fi disabled, please enable.", Toast.LENGTH_SHORT).show();
 

@@ -77,4 +77,34 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="2dp" />
 
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Key Generator"
+                android:id="@+id/mainGeneratorActivityBtn"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="50" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="None"
+                android:id="@+id/button2"
+                android:layout_weight="50"
+                android:enabled="false" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="#888888"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp" />
+
     </LinearLayout>
