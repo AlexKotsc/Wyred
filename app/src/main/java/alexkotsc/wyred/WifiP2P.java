@@ -17,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +56,18 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
         Button searchBtn = (Button) findViewById(R.id.wifiPeerSearchBtn);
         searchBtn.setOnClickListener(new searchBtnOnClickListener(this));
+
+        Button clearGroupsBtn = (Button) findViewById(R.id.button);
+        clearGroupsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(wifiPeerService!=null){
+                    wifiPeerService.clearGroups();
+                } else {
+                    Toast.makeText(WifiP2P.this, "Not yet connected to service.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         ListView lw = (ListView) findViewById(R.id.listView);
         lw.setEmptyView(findViewById(R.id.emptylist));

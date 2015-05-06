@@ -19,6 +19,14 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +55,25 @@ public class WifiPeerService extends Service {
 
     WifiP2pDnsSdServiceRequest serviceRequest;
 
+    public void clearGroups() {
+        //Use reflection if it's possible to clear groups.
+        if(mManager != null) {
+            try {
+                Method[] managerMethods = Class.forName("WifiP2pManager").getDeclaredMethods();
+
+                Class managerTarget = Class.forName("WifiP2PManager");
+
+                Method clearGroupMethod;
+                clearGroupMethod = managerTarget.getDeclaredMethod("deletePersistentGroup");
+
+
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
     public class mDnsResponseListener implements WifiP2pManager.DnsSdServiceResponseListener {
@@ -121,12 +148,65 @@ public class WifiPeerService extends Service {
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
-                    String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
+                    final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
 
-                    if(info.groupFormed && info.isGroupOwner){
+                    if (info.groupFormed && info.isGroupOwner) {
+                        Toast.makeText(WifiPeerService.this, "I'm group owner!", Toast.LENGTH_SHORT).show();
 
-                    } else if (info.groupFormed){
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try{
+                                    ServerSocket serverSocket = new ServerSocket(8080);
+                                    Socket socketClient = null;
 
+                                    while(true) {
+                                        socketClient = serverSocket.accept();
+
+                                        ServerAsyncTask serverAsyncTask = new ServerAsyncTask();
+                                        serverAsyncTask.execute(new Socket[] {socketClient});
+                                        Log.d(WifiP2P.logtag, "Connected with client");
+
+                                    }
+                                        //Toast.makeText(WifiPeerService.this, socketClient.getInetAddress().toString(), Toast.LENGTH_LONG).show()
+                                } catch (Exception e) {
+                                    Log.e(WifiP2P.logtag, "ServerSocket: " + e.getMessage());
+                                }
+                            }
+                        }).start();
+
+                        Log.d(WifiP2P.logtag, "ServerSocket thread started!");
+
+                    } else if (info.groupFormed) {
+                        Toast.makeText(WifiPeerService.this, "I have joined the group! Group-owner: " + groupOwnerAddress, Toast.LENGTH_SHORT).show();
+                        new Thread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(1000);
+                                    Socket socket = new Socket(InetAddress.getByName(groupOwnerAddress), 8080);
+
+                                    String result = null;
+
+                                    while(socket.isConnected()){
+                                        InputStream is = socket.getInputStream();
+
+                                        PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
+
+                                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+                                        result = br.readLine();
+
+                                        pw.write(result + ", well hello back!");
+
+                                        Log.d(WifiP2P.logtag, "Connected with server");
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(WifiP2P.logtag, "ClientSocket: " + e.getMessage());
+                                }
+                            }
+                        }).start();
                     }
                 }
             });
@@ -174,7 +254,7 @@ public class WifiPeerService extends Service {
 
             WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance("_wyredapp", "_aodv._tcp", record);
 
-            mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener(){
+            mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
 
                 @Override
                 public void onSuccess() {
@@ -186,13 +266,6 @@ public class WifiPeerService extends Service {
                     Log.e(WifiP2P.logtag, "Local service could not be started: " + reason);
                 }
             });
-        }
-    }
-
-    public void receivePeers(WifiP2pDeviceList wl){
-        //Log.d(WifiP2P.logtag, "Listener received peers");
-        if(activity!=null){
-            activity.receivePeers(wl);
         }
     }
 
@@ -237,10 +310,7 @@ public class WifiPeerService extends Service {
     }
 
     public void discoverServices() {
-
         setServiceListeners();
-
-
         mManager.discoverServices(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
