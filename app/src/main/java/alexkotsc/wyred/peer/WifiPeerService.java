@@ -29,6 +29,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import alexkotsc.wyred.WifiP2P;
@@ -39,9 +40,9 @@ import alexkotsc.wyred.WifiP2P;
 public class WifiPeerService extends Service {
 
     private final IBinder binder = new WifiPeerServiceBinder();
+    private HashMap<String, Peer> peers = new HashMap<>();
     private ArrayList<WifiP2pDevice> currentPeers = new ArrayList<>();
     private HashMap<String, WifiP2pDevice> peerMap = new HashMap<>();
-    private WifiP2pDeviceList deviceList;
     private boolean P2PEnabled = false;
     private WifiP2P activity;
     private WifiP2pManager mManager = null;
@@ -89,6 +90,12 @@ public class WifiPeerService extends Service {
             //Log.d(WifiP2P.TAG, "DnsSdTxtRecord: " + fullDomainName);
 
             if(txtRecordMap.get("wyred").equals("enabled")){
+                Peer tempPeer = new Peer();
+                tempPeer.setWifiP2pDevice(srcDevice);
+                tempPeer.setPeerName(txtRecordMap.get("name"));
+                tempPeer.setPublicKey(txtRecordMap.get("publicKey"));
+
+                peers.put(tempPeer.getDeviceAddress(), tempPeer);
 
                 currentPeers.add(srcDevice);
                 peerMap.put(srcDevice.deviceAddress, srcDevice);
@@ -229,7 +236,8 @@ public class WifiPeerService extends Service {
             //Toast.makeText(this, peerMap.values().toString(), Toast.LENGTH_SHORT).show();
 
             if(activity!=null){
-                activity.receivePeerList(peerMap);
+                activity.receivePeers(peers);
+                //activity.receivePeerList(peerMap);
             }
         }
     }
@@ -239,11 +247,15 @@ public class WifiPeerService extends Service {
 
             Map record = new HashMap();
 
+            Log.d(WifiP2P.TAG, "starting service registration");
+
             if(thisDevice==null){
                 record.put("name", "unknown");
             } else {
-                record.put("name", thisDevice.deviceName);
+                record.put("name", "WYRED-" + thisDevice.deviceName);
             }
+
+            record.put("publicKey", "test1234test");
 
             record.put("available", "visible");
             record.put("wyred","enabled");
@@ -272,11 +284,11 @@ public class WifiPeerService extends Service {
             mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
             mChannel = mManager.initialize(this,getMainLooper(), null);
 
-            startServiceRegistration();
+
             //discoverPeers();
 
             mManager.setDnsSdResponseListeners(mChannel, dnsSdServiceResponseListener, dnsSdTxtRecordListener);
-            discoverServices();
+            //discoverServices();
         }
 
         return binder;
@@ -353,9 +365,9 @@ public class WifiPeerService extends Service {
 
     private void logPeers(){
         Log.d(WifiP2P.TAG, "------ Peers -------");
-        Log.d(WifiP2P.TAG, currentPeers.toString());
+        Log.d(WifiP2P.TAG, String.valueOf(currentPeers.size()));
         Log.d(WifiP2P.TAG, "^ currentPeers, peerMap = ");
-        Log.d(WifiP2P.TAG, peerMap.toString());
+        Log.d(WifiP2P.TAG, String.valueOf(peerMap.size()));
         Log.d(WifiP2P.TAG, "------ /Peers -------");
     }
 
@@ -435,7 +447,11 @@ public class WifiPeerService extends Service {
                 wifiPeerService.connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
                 WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
-                wifiPeerService.thisDevice = device;
+                thisDevice = device;
+                Log.d(WifiP2P.TAG, "local device set! " + thisDevice.deviceName);
+                startServiceRegistration();
+                discoverServices();
+
             }
         }
     }

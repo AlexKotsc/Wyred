@@ -23,19 +23,19 @@ import java.util.HashMap;
 import java.util.List;
 
 import alexkotsc.wyred.peer.Peer;
-import alexkotsc.wyred.peer.PeerActivity;
 import alexkotsc.wyred.peer.WifiPeerService;
 
 
-public class WifiP2P extends ActionBarActivity implements PeerActivity {
+public class WifiP2P extends ActionBarActivity {
 
     public final static String TAG = "WifiP2P";
 
     private boolean P2PState = false;
 
-    private List<WifiP2pDevice> peers;
+    //private List<WifiP2pDevice> peers;
 
     private HashMap<String, WifiP2pDevice> oldpeers;
+    private HashMap<String, Peer> peers;
 
 
     private WifiPeerService wifiPeerService;
@@ -50,7 +50,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
         oldpeers = new HashMap<>();
 
-        peers = new ArrayList<>();
+        //peers = new ArrayList<>();
 
         Button searchBtn = (Button) findViewById(R.id.wifiPeerSearchBtn);
         searchBtn.setOnClickListener(new searchBtnOnClickListener(this));
@@ -79,15 +79,17 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
                 String deviceAddress = tw.getText().toString();
 
-                WifiP2pDevice clickedPeer = oldpeers.get(deviceAddress.toString());
+                Peer clickedPeer = peers.get(deviceAddress.toString());
+
+                //WifiP2pDevice clickedPeer = oldpeers.get(deviceAddress.toString());
 
                 if(clickedPeer != null){
-                    if(clickedPeer.status == WifiP2pDevice.CONNECTED){
-                        Log.d(TAG, "Already connected to: " + clickedPeer.deviceName);
-                        
+                    if(clickedPeer.getWifiP2pDevice().status == WifiP2pDevice.CONNECTED){
+                        Log.d(TAG, "Already connected to: " + clickedPeer.getDeviceName());
+
                     } else {
-                        Log.d(TAG, clickedPeer.deviceName + " clicked, trying to connect...");
-                        wifiPeerService.connect(clickedPeer);
+                        Log.d(TAG, clickedPeer.getDeviceName() + " clicked, trying to connect...");
+                        wifiPeerService.connect(clickedPeer.getWifiP2pDevice());
 
                     }
                 } else {
@@ -155,13 +157,24 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     }
 
     public void discoverPeers() {
-        Log.d(TAG, "Discovering wyred peers");
+        Log.d(TAG, "Initiating discovery...");
         wifiPeerService.discoverServices();
     }
 
-    @Override
-    public void receivePeers(Peer[] peers) {
-        Log.d(TAG, "Peer[] received");
+    public void receivePeers(HashMap<String,Peer> peers) {
+        Log.d(TAG, "\tReceiving peers...");
+        this.peers = peers;
+
+        List<Peer> peerList = new ArrayList<Peer>();
+
+        for(Peer p : peers.values()){
+            peerList.add(p);
+        }
+
+        ListView lw = (ListView) findViewById(R.id.listView);
+        lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, peerList));
+
+
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -184,7 +197,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     };
 
 
-    public void receivePeerList(HashMap<String, WifiP2pDevice> currentPeers) {
+    /*public void receivePeerList(HashMap<String, WifiP2pDevice> currentPeers) {
         Log.d(TAG, "Receiving Wyred services");
         if(currentPeers != null) {
 
@@ -205,5 +218,5 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
             ListView lw = (ListView) findViewById(R.id.listView);
             lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, peers));
         }
-    }
+    }*/
 }

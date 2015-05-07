@@ -10,15 +10,17 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import alexkotsc.wyred.peer.Peer;
+
 /**
  * Created by AlexKotsc on 15-04-2015.
  */
-public class PeerListAdapter extends ArrayAdapter<WifiP2pDevice> {
+public class PeerListAdapter extends ArrayAdapter<Peer> {
 
     private Context context;
-    private List<WifiP2pDevice> values;
+    private List<Peer> values;
 
-    public PeerListAdapter(Context context, int resource, List<WifiP2pDevice> objects) {
+    public PeerListAdapter(Context context, int resource, List<Peer> objects) {
         super(context, R.layout.peerlistview, objects);
 
         this.context = context;
@@ -35,28 +37,29 @@ public class PeerListAdapter extends ArrayAdapter<WifiP2pDevice> {
         TextView peerOtherText = (TextView) rowView.findViewById(R.id.listPeerOther);
         TextView peerStatusText = (TextView) rowView.findViewById(R.id.listPeerStatus);
 
-        peerNameText.setText(values.get(position).deviceName);
-        peerAddressText.setText(values.get(position).deviceAddress);
-        peerOtherText.setText(values.get(position).primaryDeviceType);
-        peerOtherText.setEnabled(false);
-        switch(values.get(position).status){
+        Peer currentPeer = values.get(position);
+
+        peerNameText.setText(currentPeer.getPeerName());
+        peerAddressText.setText(currentPeer.getDeviceAddress());
+        peerOtherText.setText(currentPeer.getPublicKey());
+        switch(currentPeer.getWifiP2pDevice().status){
             case WifiP2pDevice.AVAILABLE:
-                peerStatusText.setText("Status: Available");
+                peerStatusText.setText("Available");
                 break;
             case WifiP2pDevice.CONNECTED:
-                peerStatusText.setText("Status: Connected");
+                peerStatusText.setText("Connected");
                 break;
             case WifiP2pDevice.FAILED:
-                peerStatusText.setText("Status: Failed");
+                peerStatusText.setText("Failed");
                 break;
             case WifiP2pDevice.INVITED:
-                peerStatusText.setText("Status: Invited");
+                peerStatusText.setText("Invited");
                 break;
             case WifiP2pDevice.UNAVAILABLE:
-                peerStatusText.setText("Status: Unavailable");
+                peerStatusText.setText("Unavailable");
                 break;
             default:
-                peerStatusText.setText("Status: unknown (" + values.get(position).status + ")");
+                peerStatusText.setText("Unknown (" + currentPeer.getWifiP2pDevice().status + ")");
         }
 
         return rowView;
