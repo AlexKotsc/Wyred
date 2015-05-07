@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
@@ -20,7 +19,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,7 +29,7 @@ import alexkotsc.wyred.peer.WifiPeerService;
 
 public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
-    public final static String logtag = "WifiP2P";
+    public final static String TAG = "WifiP2P";
 
     private boolean P2PState = false;
 
@@ -84,18 +82,21 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
                 WifiP2pDevice clickedPeer = oldpeers.get(deviceAddress.toString());
 
                 if(clickedPeer != null){
-                    wifiPeerService.connect(clickedPeer);
-                    //Toast.makeText(getApplicationContext(), clickedPeer.deviceName + " : clicked.", Toast.LENGTH_SHORT).show();
-                    Log.d(logtag, clickedPeer.deviceName + " clicked");
+                    if(clickedPeer.status == WifiP2pDevice.CONNECTED){
+                        Log.d(TAG, "Already connected to: " + clickedPeer.deviceName);
+                        
+                    } else {
+                        Log.d(TAG, clickedPeer.deviceName + " clicked, trying to connect...");
+                        wifiPeerService.connect(clickedPeer);
+
+                    }
                 } else {
-                    Log.e(logtag, "Peer was not found in map.");
+                    Log.e(TAG, "Peer was not found in map.");
                 }
             }
         });
 
     }
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -143,7 +144,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Log.d(logtag, "Binding to service");
+        Log.d(TAG, "Binding to service");
         Intent i = new Intent(this, WifiPeerService.class);
         bindService(i, serviceConnection, Context.BIND_AUTO_CREATE);
     }
@@ -154,42 +155,13 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
     }
 
     public void discoverPeers() {
-
-        Log.d(logtag, "Discovering peers");
-
-        //wifiPeerService.discoverPeers();
+        Log.d(TAG, "Discovering wyred peers");
         wifiPeerService.discoverServices();
-
-        /*Intent i = new Intent(this, WifiPeerService.class);
-        Bundle b = new Bundle();
-        b.putString("action", WifiPeerService.WifiAction.PEERS_CHANGED.toString());
-        i.putExtras(b);
-        startService(i);*/
-
-    }
-
-    public void receivePeers(WifiP2pDeviceList peerlist){
-
-        Log.d(logtag, "Receiving peers");
-
-        peers = new ArrayList<>();
-
-        Collection<WifiP2pDevice> peerCollection = peerlist.getDeviceList();
-
-        for(WifiP2pDevice wd : peerCollection){
-            Log.d(logtag, "Peer: " + wd.deviceName);
-            peers.add(wd);
-            oldpeers.put(wd.deviceAddress, wd);
-        }
-
-        ListView lw = (ListView) findViewById(R.id.listView);
-        lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, peers));
-
     }
 
     @Override
     public void receivePeers(Peer[] peers) {
-        Log.d(logtag, "Peer[] received");
+        Log.d(TAG, "Peer[] received");
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -201,7 +173,7 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
             WifiPeerService.WifiPeerServiceBinder binder = (WifiPeerService.WifiPeerServiceBinder) service;
             wifiPeerService = binder.getService();
             wifiPeerService.setActivity(WifiP2P.this);
-            Log.d(logtag, "Bound to service");
+            Log.d(TAG, "Bound to service");
             isWifiBound = true;
         }
 
@@ -213,19 +185,25 @@ public class WifiP2P extends ActionBarActivity implements PeerActivity {
 
 
     public void receivePeerList(HashMap<String, WifiP2pDevice> currentPeers) {
-        Log.d(logtag, "Receiving Wyred services");
+        Log.d(TAG, "Receiving Wyred services");
         if(currentPeers != null) {
 
-            List<WifiP2pDevice> tempPeers = new ArrayList<>(currentPeers.values());
+            peers = new ArrayList<>(currentPeers.values());
 
             for(WifiP2pDevice wd : currentPeers.values()){
-                Log.d(logtag, "Peer: " + wd.deviceName);
-                peers.add(wd);
+                Log.d(TAG, "Peer: " + wd.deviceName);
+                if(peers.contains(wd)){
+                    Log.d(WifiP2P.TAG, "Peer is already in peer list");
+                } else {
+                    peers.add(wd);
+                }
                 oldpeers.put(wd.deviceAddress, wd);
             }
 
+
+
             ListView lw = (ListView) findViewById(R.id.listView);
-            lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, tempPeers));
+            lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, peers));
         }
     }
 }

@@ -53,7 +53,7 @@ public class WifiPeerService extends Service {
     private final WifiP2pManager.DnsSdTxtRecordListener dnsSdTxtRecordListener = new mDnsTxtRecordListener();
     private final WifiP2pManager.DnsSdServiceResponseListener dnsSdServiceResponseListener = new mDnsResponseListener();
 
-    WifiP2pDnsSdServiceRequest serviceRequest;
+    private WifiP2pDevice currentlyConnectedTo = null;
 
     public void clearGroups() {
         //Use reflection if it's possible to clear groups.
@@ -66,7 +66,6 @@ public class WifiPeerService extends Service {
                 Method clearGroupMethod;
                 clearGroupMethod = managerTarget.getDeclaredMethod("deletePersistentGroup");
 
-
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (NoSuchMethodException e) {
@@ -77,10 +76,9 @@ public class WifiPeerService extends Service {
 
 
     public class mDnsResponseListener implements WifiP2pManager.DnsSdServiceResponseListener {
-
         @Override
         public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice srcDevice) {
-            Log.d(WifiP2P.logtag, "DnsSdService: " + instanceName);
+            //Log.d(WifiP2P.TAG, "DnsSdService: " + instanceName);
         }
     }
 
@@ -88,12 +86,11 @@ public class WifiPeerService extends Service {
 
         @Override
         public void onDnsSdTxtRecordAvailable(String fullDomainName, Map<String, String> txtRecordMap, WifiP2pDevice srcDevice) {
-            Log.d(WifiP2P.logtag, "DnsSdTxtRecord: " + fullDomainName);
+            //Log.d(WifiP2P.TAG, "DnsSdTxtRecord: " + fullDomainName);
 
             if(txtRecordMap.get("wyred").equals("enabled")){
 
                 currentPeers.add(srcDevice);
-
                 peerMap.put(srcDevice.deviceAddress, srcDevice);
             }
         }
@@ -116,6 +113,8 @@ public class WifiPeerService extends Service {
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
 
         registerReceiver(mReceiver, intentFilter);
+
+        currentPeers = new ArrayList<>();
     }
 
     @Override
@@ -131,7 +130,7 @@ public class WifiPeerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(mManager == null) {
-            //Log.d(WifiP2P.logtag, "WifiP2pManager initialized");
+            //Log.d(WifiP2P.TAG, "WifiP2pManager initialized");
             mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
             mChannel = mManager.initialize(this,getMainLooper(), null);
         }
@@ -148,6 +147,10 @@ public class WifiPeerService extends Service {
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
+
+                    if(currentlyConnectedTo != null){
+                        Toast.makeText(WifiPeerService.this, "Connected to " + currentlyConnectedTo.deviceName, Toast.LENGTH_SHORT).show();
+                    }
                     final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
 
                     if (info.groupFormed && info.isGroupOwner) {
@@ -165,20 +168,19 @@ public class WifiPeerService extends Service {
 
                                         ServerAsyncTask serverAsyncTask = new ServerAsyncTask();
                                         serverAsyncTask.execute(new Socket[] {socketClient});
-                                        Log.d(WifiP2P.logtag, "Connected with client");
+                                        Log.d(WifiP2P.TAG, "Connected with client");
 
                                     }
-                                        //Toast.makeText(WifiPeerService.this, socketClient.getInetAddress().toString(), Toast.LENGTH_LONG).show()
                                 } catch (Exception e) {
-                                    Log.e(WifiP2P.logtag, "ServerSocket: " + e.getMessage());
+                                    Log.e(WifiP2P.TAG, "FAILED to establish connection with client: " + e.getMessage());
                                 }
                             }
                         }).start();
 
-                        Log.d(WifiP2P.logtag, "ServerSocket thread started!");
+                        Log.d(WifiP2P.TAG, "ServerSocket thread started!");
 
                     } else if (info.groupFormed) {
-                        Toast.makeText(WifiPeerService.this, "I have joined the group! Group-owner: " + groupOwnerAddress, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(WifiPeerService.this, "I have joined the group!", Toast.LENGTH_SHORT).show();
                         new Thread(new Runnable() {
 
                             @Override
@@ -199,11 +201,10 @@ public class WifiPeerService extends Service {
                                         result = br.readLine();
 
                                         pw.write(result + ", well hello back!");
-
-                                        Log.d(WifiP2P.logtag, "Connected with server");
+                                        Log.d(WifiP2P.TAG, "Connected with server: " + result);
                                     }
                                 } catch (Exception e) {
-                                    Log.e(WifiP2P.logtag, "ClientSocket: " + e.getMessage());
+                                    Log.e(WifiP2P.TAG, "FAILED to communicate with server: " + e.getMessage());
                                 }
                             }
                         }).start();
@@ -211,7 +212,6 @@ public class WifiPeerService extends Service {
                 }
             });
         }
-        //Log.d(WifiP2P.logtag, "Connected?");
     }
 
     private void changeState(boolean b) {
@@ -226,15 +226,11 @@ public class WifiPeerService extends Service {
     public void requestPeers() {
         if(mManager != null){
 
-            /*mManager.requestPeers(mChannel, new WifiP2pManager.PeerListListener() {
-                @Override
-                public void onPeersAvailable(WifiP2pDeviceList peers) {
-                    receivePeers(peers);
-                }
-            });*/
+            //Toast.makeText(this, peerMap.values().toString(), Toast.LENGTH_SHORT).show();
 
-            Toast.makeText(this, currentPeers.toString(), Toast.LENGTH_SHORT).show();
-            receivePeerList();
+            if(activity!=null){
+                activity.receivePeerList(peerMap);
+            }
         }
     }
 
@@ -258,32 +254,26 @@ public class WifiPeerService extends Service {
 
                 @Override
                 public void onSuccess() {
-                    //Log.d(WifiP2P.logtag, "Local service started succesfully");
+                    //Log.d(WifiP2P.TAG, "Local service started succesfully");
                 }
 
                 @Override
                 public void onFailure(int reason) {
-                    Log.e(WifiP2P.logtag, "Local service could not be started: " + reason);
+                    Log.e(WifiP2P.TAG, "Local service could not be started: " + reason);
                 }
             });
-        }
-    }
-
-    public void receivePeerList(){
-        if(activity!=null){
-            activity.receivePeerList(peerMap);
         }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         if(mManager == null) {
-            //Log.d(WifiP2P.logtag, "WifiP2pManager initialized");
+            //Log.d(WifiP2P.TAG, "WifiP2pManager initialized");
             mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
             mChannel = mManager.initialize(this,getMainLooper(), null);
 
             startServiceRegistration();
-            discoverPeers();
+            //discoverPeers();
 
             mManager.setDnsSdResponseListeners(mChannel, dnsSdServiceResponseListener, dnsSdTxtRecordListener);
             discoverServices();
@@ -298,12 +288,12 @@ public class WifiPeerService extends Service {
 
                     @Override
                     public void onSuccess() {
-                        Log.d(WifiP2P.logtag, "addServiceRequest");
+                        Log.d(WifiP2P.TAG, "Service request succesfully added.");
                     }
 
                     @Override
                     public void onFailure(int reason) {
-                        Log.e(WifiP2P.logtag, "addServiceRequest: " + reason);
+                        Log.e(WifiP2P.TAG, "FAILED to add service request: " + reason);
                     }
                 }
         );
@@ -314,13 +304,15 @@ public class WifiPeerService extends Service {
         mManager.discoverServices(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                //Log.d(WifiP2P.logtag, "discoverServices");
+                changeState(true);
                 servicesDiscovered();
             }
 
             @Override
             public void onFailure(int reason) {
-                Log.e(WifiP2P.logtag, "discoverServices: " + reason);
+                Log.e(WifiP2P.TAG, "FAILED to discover services: " + reason);
+
+                changeState(false);
 
                 if (reason == WifiP2pManager.NO_SERVICE_REQUESTS) {
 
@@ -338,7 +330,7 @@ public class WifiPeerService extends Service {
 
                                 @Override
                                 public void onFailure(int i) {
-                                    Log.d(WifiP2P.logtag, "FAILED to clear service requests ");
+                                    Log.d(WifiP2P.TAG, "FAILED to clear service requests ");
                                 }
                             });
 
@@ -346,7 +338,7 @@ public class WifiPeerService extends Service {
 
                         @Override
                         public void onFailure(int i) {
-                            Log.d(WifiP2P.logtag, "FAILED to stop discovery");
+                            Log.d(WifiP2P.TAG, "FAILED to stop discovery");
                         }
                     });
                 }
@@ -355,7 +347,16 @@ public class WifiPeerService extends Service {
     }
 
     private void servicesDiscovered() {
-        Log.d(WifiP2P.logtag + "-----------", currentPeers.toString());
+        Log.d(WifiP2P.TAG, "Services discovered succesfully");
+        logPeers();
+    }
+
+    private void logPeers(){
+        Log.d(WifiP2P.TAG, "------ Peers -------");
+        Log.d(WifiP2P.TAG, currentPeers.toString());
+        Log.d(WifiP2P.TAG, "^ currentPeers, peerMap = ");
+        Log.d(WifiP2P.TAG, peerMap.toString());
+        Log.d(WifiP2P.TAG, "------ /Peers -------");
     }
 
     public void setActivity(WifiP2P wifiP2P) {
@@ -363,7 +364,7 @@ public class WifiPeerService extends Service {
         this.activity.setP2PState(P2PEnabled);
     }
 
-    public void discoverPeers() {
+    /*public void discoverPeers() {
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -376,13 +377,13 @@ public class WifiPeerService extends Service {
             @Override
             public void onFailure(int reason) {
                 changeState(false);
-                Log.e(WifiP2P.logtag, "discoverPeers: " + reason);
+                Log.e(WifiP2P.TAG, "discoverPeers: " + reason);
                 Toast.makeText(getApplicationContext(), ("Failed to utilize Wifi-Direct: " + reason), Toast.LENGTH_SHORT);
             }
         });
-    }
+    }*/
 
-    public void connect(WifiP2pDevice clickedPeer) {
+    public void connect(final WifiP2pDevice clickedPeer) {
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = clickedPeer.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
@@ -390,7 +391,7 @@ public class WifiPeerService extends Service {
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-
+                currentlyConnectedTo = clickedPeer;
             }
 
             @Override

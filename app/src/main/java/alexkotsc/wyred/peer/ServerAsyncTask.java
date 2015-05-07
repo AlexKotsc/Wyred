@@ -35,7 +35,7 @@ public class ServerAsyncTask extends AsyncTask<Socket, Void, String> {
 
             result = br.readLine();
 
-            Log.d(WifiP2P.logtag, "Response from client: " + result);
+            Log.d(WifiP2P.TAG, "Response from client: " + result);
 
             clientSocket.close();
 
