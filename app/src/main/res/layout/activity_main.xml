@@ -93,10 +93,10 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="None"
-                android:id="@+id/button2"
+                android:text="Messages"
+                android:id="@+id/mainMessagePreviewBtn"
                 android:layout_weight="50"
-                android:enabled="false" />
+                android:enabled="true" />
         </LinearLayout>
 
         <LinearLayout
@@ -106,5 +106,11 @@
             android:background="#888888"
             android:layout_marginTop="2dp"
             android:layout_marginBottom="2dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LOGIN"
+            android:id="@+id/mainLoginBtn" />
 
     </LinearLayout>

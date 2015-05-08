@@ -51,6 +51,24 @@ public class MainActivity extends ActionBarActivity {
             }
         });
 
+        Button gotoMessagingBtn = (Button) findViewById(R.id.mainMessagePreviewBtn);
+        gotoMessagingBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getApplication(), ConversationActivity.class);
+                startActivity(i);
+            }
+        });
+
+        Button gotoLoginBtn = (Button) findViewById(R.id.mainLoginBtn);
+        gotoLoginBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getApplication(), LoginActivity.class);
+                startActivity(i);
+            }
+        });
+
         if(!wifiState()){
             Toast.makeText(this, "Wi-Fi disabled, please enable.", Toast.LENGTH_SHORT).show();
 

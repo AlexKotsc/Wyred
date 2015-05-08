@@ -50,11 +50,20 @@
         <service
             android:name=".peer.WifiPeerService"
             android:exported="false" />
-        <receiver android:name=".peer.WifiPeerService$mReceiver"/>
+
+        <receiver android:name=".peer.WifiPeerService$mReceiver" />
 
         <activity
             android:name=".KeyGeneratorActivity"
             android:label="@string/title_activity_key_generator" >
+        </activity>
+        <activity
+            android:name=".ConversationActivity"
+            android:label="@string/title_activity_conversation" >
+        </activity>
+        <activity
+            android:name=".LoginActivity"
+            android:label="@string/title_activity_login" >
         </activity>
     </application>
 

@@ -10,4 +10,6 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_blep2_p">BLEP2P</string>
     <string name="title_activity_key_generator">KeyGenerator</string>
+    <string name="title_activity_conversation">ConversationActivity</string>
+    <string name="title_activity_login">LoginActivity</string>
 </resources>

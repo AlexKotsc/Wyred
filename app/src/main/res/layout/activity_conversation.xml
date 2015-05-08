@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="5dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="20dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:id="@+id/conversationHeaderLayout">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Clicked peer"
+            android:id="@+id/conversationPeerName"
+            android:layout_gravity="center_vertical"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0 messages"
+            android:id="@+id/conversationMessageCounter"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="false"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentLeft="true" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#999"
+        android:id="@+id/conversationSpacer"
+        android:layout_below="@+id/conversationHeaderLayout"
+        android:layout_centerHorizontal="true"></LinearLayout>
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:id="@+id/conversationMessageList"
+        android:layout_gravity="center_horizontal"
+        android:layout_below="@+id/conversationSpacer"
+        android:layout_centerHorizontal="true" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#999"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/conversationSpacer2">
+
+    </LinearLayout>
+
+    <EditText
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/conversationMessageText"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/conversationSpacer2" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send"
+        android:id="@+id/conversationSendMessageButton"
+        android:layout_below="@+id/conversationSpacer2"
+        android:layout_toRightOf="@+id/conversationMessageText"
+        android:layout_toEndOf="@+id/conversationMessageText" />
+
+</RelativeLayout>

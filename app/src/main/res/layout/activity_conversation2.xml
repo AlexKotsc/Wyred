@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="5dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:id="@+id/conversationHeaderLayout"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Clicked peer"
+            android:id="@+id/conversationPeerName"
+            android:layout_gravity="center_vertical"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="0 messages"
+            android:id="@+id/conversationMessageCounter"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="false"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentLeft="true" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#999"
+        android:id="@+id/conversationSpacer"
+        android:layout_below="@+id/conversationHeaderLayout"
+        android:layout_centerHorizontal="true"></LinearLayout>
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/conversationMessageList"
+        android:layout_gravity="center_horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/conversationSpacer2"
+        android:layout_below="@+id/conversationSpacer" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#999"
+        android:id="@+id/conversationSpacer2"
+        android:layout_above="@+id/conversationMessageLayout"
+        android:layout_centerHorizontal="true">
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/conversationMessageLayout">
+
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/conversationMessageText"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:layout_weight=".8"
+            android:layout_gravity="bottom" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send"
+            android:id="@+id/conversationSendMessageButton"
+            android:layout_toRightOf="@+id/conversationMessageText"
+            android:layout_alignParentBottom="true"
+            android:layout_alignRight="@+id/conversationMessageText"
+            android:layout_alignEnd="@+id/conversationMessageText"
+            android:layout_weight=".2" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="No messages"
+        android:id="@+id/emptymessages"
+        android:layout_below="@+id/conversationSpacer"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:textStyle="italic"
+        android:textColor="#999" />
+
+</RelativeLayout>
