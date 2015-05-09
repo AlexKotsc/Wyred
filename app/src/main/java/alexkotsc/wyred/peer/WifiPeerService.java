@@ -9,7 +9,6 @@ import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
@@ -29,7 +28,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import alexkotsc.wyred.WifiP2P;
@@ -375,25 +373,6 @@ public class WifiPeerService extends Service {
         this.activity = wifiP2P;
         this.activity.setP2PState(P2PEnabled);
     }
-
-    /*public void discoverPeers() {
-        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                changeState(true);
-                //Log.d("WifiP2P", "Succesfully initiated peer discovery");
-                requestPeers();
-            }
-
-
-            @Override
-            public void onFailure(int reason) {
-                changeState(false);
-                Log.e(WifiP2P.TAG, "discoverPeers: " + reason);
-                Toast.makeText(getApplicationContext(), ("Failed to utilize Wifi-Direct: " + reason), Toast.LENGTH_SHORT);
-            }
-        });
-    }*/
 
     public void connect(final WifiP2pDevice clickedPeer) {
         WifiP2pConfig config = new WifiP2pConfig();

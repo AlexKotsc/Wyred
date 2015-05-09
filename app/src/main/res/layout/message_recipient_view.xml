@@ -12,21 +12,23 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#CCC"
-        android:padding="10dp">
+        android:padding="10dp"
+        android:gravity="right">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/textView5" />
+            android:id="@+id/messageTextView"
+            android:focusable="false" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="Small Text"
-            android:id="@+id/textView6" />
+            android:id="@+id/messageTimeView" />
     </LinearLayout>
 
 </LinearLayout>

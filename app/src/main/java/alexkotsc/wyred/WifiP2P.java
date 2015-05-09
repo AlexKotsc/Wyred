@@ -195,28 +195,4 @@ public class WifiP2P extends ActionBarActivity {
             isWifiBound = false;
         }
     };
-
-
-    /*public void receivePeerList(HashMap<String, WifiP2pDevice> currentPeers) {
-        Log.d(TAG, "Receiving Wyred services");
-        if(currentPeers != null) {
-
-            peers = new ArrayList<>(currentPeers.values());
-
-            for(WifiP2pDevice wd : currentPeers.values()){
-                Log.d(TAG, "Peer: " + wd.deviceName);
-                if(peers.contains(wd)){
-                    Log.d(WifiP2P.TAG, "Peer is already in peer list");
-                } else {
-                    peers.add(wd);
-                }
-                oldpeers.put(wd.deviceAddress, wd);
-            }
-
-
-
-            ListView lw = (ListView) findViewById(R.id.listView);
-            lw.setAdapter(new PeerListAdapter(this, R.layout.peerlistview, peers));
-        }
-    }*/
 }

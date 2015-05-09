@@ -56,6 +56,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(getApplication(), ConversationActivity.class);
+                i.putExtra("publicKey", "pkey");
                 startActivity(i);
             }
         });

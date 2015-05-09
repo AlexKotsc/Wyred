@@ -22,7 +22,7 @@
             android:text="Clicked peer"
             android:id="@+id/conversationPeerName"
             android:layout_gravity="center_vertical"
-            android:layout_alignParentTop="true"
+            android:layout_centerVertical="true"
             android:layout_centerHorizontal="true" />
 
         <TextView
@@ -32,9 +32,21 @@
             android:text="0 messages"
             android:id="@+id/conversationMessageCounter"
             android:layout_centerVertical="true"
-            android:layout_alignParentRight="false"
+            android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentLeft="true" />
+            android:layout_alignParentLeft="false" />
+
+        <ImageButton
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:id="@+id/imageButton"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_menu_back"
+            android:background="#00ffffff"
+            android:scaleType="fitCenter"
+            android:padding="5dp" />
 
     </RelativeLayout>
 
@@ -81,7 +93,8 @@
             android:layout_centerHorizontal="true"
             android:layout_alignParentBottom="true"
             android:layout_weight=".8"
-            android:layout_gravity="bottom" />
+            android:layout_gravity="bottom"
+            android:hint="Indtast meddelse" />
 
         <Button
             android:layout_width="wrap_content"

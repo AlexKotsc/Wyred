@@ -1,36 +1,117 @@
 package alexkotsc.wyred;
 
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import alexkotsc.wyred.db.WyredOpenHelper;
+
 
 public class ConversationActivity extends ActionBarActivity {
+
+    WyredOpenHelper wyredOpenHelper;
+    private int messageCount = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation2);
 
+        Intent i = getIntent();
+
+        String publicKey = null;
+
+        if((publicKey = i.getStringExtra("publicKey"))==null){
+            publicKey = "TestKey";
+        }
+
         ArrayList<ChatMessage> messages = new ArrayList<>();
-        messages.add(new ChatMessage(true));
-        messages.add(new ChatMessage(false));
-        messages.add(new ChatMessage(true));
-        messages.add(new ChatMessage(true));
-        messages.add(new ChatMessage(true));
-        messages.add(new ChatMessage(false));
-        messages.add(new ChatMessage(true));
-        messages.add(new ChatMessage(true));
+
+        ChatMessage cm1 = new ChatMessage(true);
+        cm1.setMessage("Besked 1");
+        cm1.setPeerPublicKey("TestKey");
+        messages.add(cm1);
+        ChatMessage cm2 = new ChatMessage(false);
+        cm2.setMessage("Besked 2");
+        cm2.setPeerPublicKey("TestKey");
+        messages.add(cm2);
+        ChatMessage cm3 = new ChatMessage(true);
+        cm3.setMessage("Besked 3");
+        cm3.setPeerPublicKey("TestKey");
+        messages.add(cm3);
+        ChatMessage cm4 = new ChatMessage(true);
+        cm4.setMessage("Besked 4");
+        cm4.setPeerPublicKey("TestKey");
+        messages.add(cm4);
+        ChatMessage cm5 = new ChatMessage(true);
+        cm5.setMessage("Besked 5");
+        cm5.setPeerPublicKey("pkey");
+        messages.add(cm5);
+
+        ArrayList<ChatMessage> newMessages = new ArrayList<>();
+
+        wyredOpenHelper = new WyredOpenHelper(this);
+        SQLiteDatabase database = wyredOpenHelper.getWritableDatabase();
+
+        for(ChatMessage c : messages){
+            database.insert("wyred_messages", null, c.generateInsertValues());
+        }
+
+        database.close();
+
+        database = wyredOpenHelper.getReadableDatabase();
+        Cursor results = database.query("wyred_messages", null, "publicKey = '" +  publicKey + "'", null, null, null, null);
+
+        messageCount = results.getCount();
+
+        results.moveToFirst();
+        while(results.isAfterLast()== false){
+            ChatMessage temp = new ChatMessage();
+
+            if(results.getInt(results.getColumnIndex("isSender"))==1){
+                temp.isSender(true);
+            } else {
+                temp.isSender(false);
+            }
+
+            temp.setMessage(results.getString(results.getColumnIndex("message")));
+            temp.setPeerPublicKey(results.getString(results.getColumnIndex("publicKey")));
+            temp.setDate(results.getString(results.getColumnIndex("timestamp")));
+
+            newMessages.add(temp);
+
+            Log.d(WifiP2P.TAG, temp.getMessage());
+
+            results.moveToNext();
+        }
+
+
+        wyredOpenHelper.close();
+
 
         ListView listView = (ListView) findViewById(R.id.conversationMessageList);
         listView.setEmptyView(findViewById(R.id.emptymessages));
-        MessageAdapter messageAdapter = new MessageAdapter(this, 0, messages);
+        MessageAdapter messageAdapter = new MessageAdapter(this, 0, newMessages);
         listView.setAdapter(messageAdapter);
-        listView.setSelection(messageAdapter.getCount()-1);
+        listView.setSelection(messageAdapter.getCount() - 1);
+
+        TextView messageCounter = (TextView) findViewById(R.id.conversationMessageCounter);
+
+        if(messageCount == 1){
+            messageCounter.setText(Integer.toString(messageCount) + " message");
+        } else {
+            messageCounter.setText(Integer.toString(messageCount) + " messages");
+        }
+
 
     }
 

@@ -2,9 +2,10 @@ package alexkotsc.wyred;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,8 +16,12 @@ import android.widget.Toast;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 
 public class KeyGeneratorActivity extends ActionBarActivity {
@@ -53,6 +58,23 @@ public class KeyGeneratorActivity extends ActionBarActivity {
                 saveCurrentKey();
             }
         });
+
+
+        try {
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            Enumeration<String> aliases = ks.aliases();
+            List<String> alias = Collections.list(aliases);
+
+            Log.d(WifiP2P.TAG, alias.toString());
+            for(String s : alias) {
+                Log.d(WifiP2P.TAG, "Alias: " + s);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
