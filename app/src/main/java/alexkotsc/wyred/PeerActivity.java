@@ -1,7 +1,13 @@
 package alexkotsc.wyred;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,34 +18,39 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
+import alexkotsc.wyred.peer.WifiPeerService;
 
 
-public class PeerActivity extends ActionBarActivity {
+public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
     ExpandableListAdapter listAdapter;
+    ExpandableListView elv;
     List<String> listHeaders;
     HashMap<String, List<Peer>> listData;
+    boolean wifiEnabled = false;
+    boolean wifiBound = false;
 
+    final String TAG = "PeerActivity";
 
+    WifiPeerService wifiPeerService;
+
+    HashMap<String, Peer> currentPeers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_peer);
 
-        ExpandableListView elv = (ExpandableListView) findViewById(R.id.expandableListView);
+        elv = (ExpandableListView) findViewById(R.id.expandableListView);
 
         setupTestData();
 
-        listAdapter = new PeerExpandableListAdapter(this, listHeaders, listData);
+        updateAdapter();
 
-        elv.setAdapter(listAdapter);
-
-        for(int i = 0; i<listHeaders.size(); i++){
-            elv.expandGroup(i);
-        }
 
         elv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
@@ -95,5 +106,84 @@ public class PeerActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStop() {
+        if(wifiBound){
+            unbindService(serviceConnection);
+            wifiBound = false;
+        }
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.d(TAG, "Binding to service.");
+
+        Intent i = new Intent(this, WifiPeerService.class);
+        bindService(i, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            WifiPeerService.WifiPeerServiceBinder binder = (WifiPeerService.WifiPeerServiceBinder) service;
+            wifiPeerService = binder.getService();
+            wifiPeerService.setActivity(PeerActivity.this);
+            Log.d(TAG, "Bound to service");
+            wifiBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {wifiBound = false;
+        }
+    };
+
+    @Override
+    public void wifiStateChanged(boolean state) {
+        wifiEnabled = state;
+    }
+
+    @Override
+    public void handlePeers(HashMap<String, Peer> peers) {
+        Log.d(TAG, "Received current peers from service.");
+
+        currentPeers = peers;
+
+        if(peers != null){
+
+            List<Peer> tempList = new ArrayList<>();
+
+            for(Map.Entry<String,Peer> e : peers.entrySet()){
+
+                tempList.add(e.getValue());
+
+            }
+
+            listData.put(listHeaders.get(0), tempList);
+
+            updateAdapter();
+
+        }
+
+        for(Map.Entry<String, Peer> e : peers.entrySet()){
+            Log.d(TAG, e.toString());
+        }
+    }
+
+    private void updateAdapter() {
+        listAdapter = new PeerExpandableListAdapter(this, listHeaders, listData);
+
+        elv.setAdapter(listAdapter);
+
+        for(int i = 0; i<listHeaders.size(); i++){
+            elv.expandGroup(i);
+        }
     }
 }

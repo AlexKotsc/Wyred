@@ -69,7 +69,7 @@ public class PeerExpandableListAdapter extends BaseExpandableListAdapter {
         View view = layoutInflater.inflate(R.layout.activity_peer_list_group, null);
 
         TextView listGroupTextView = (TextView) view.findViewById(R.id.list_group_textview);
-        listGroupTextView.setText((String) getGroup(groupPosition));
+        listGroupTextView.setText(getGroup(groupPosition) + " - " + getChildrenCount(groupPosition) + " peers");
 
         if(getChildrenCount(groupPosition)<1){
             listGroupTextView.setTypeface(listGroupTextView.getTypeface(), Typeface.ITALIC);

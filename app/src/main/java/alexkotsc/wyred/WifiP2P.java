@@ -22,11 +22,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
 import alexkotsc.wyred.peer.WifiPeerService;
 
 
-public class WifiP2P extends ActionBarActivity {
+public class WifiP2P extends ActionBarActivity implements IPeerActivity {
 
     public final static String TAG = "WifiP2P";
 
@@ -195,4 +196,14 @@ public class WifiP2P extends ActionBarActivity {
             isWifiBound = false;
         }
     };
+
+    @Override
+    public void wifiStateChanged(boolean state) {
+        setP2PState(state);
+    }
+
+    @Override
+    public void handlePeers(HashMap<String, Peer> peers) {
+        receivePeers(peers);
+    }
 }
