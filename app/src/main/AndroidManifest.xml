@@ -65,6 +65,10 @@
             android:name=".LoginActivity"
             android:label="@string/title_activity_login" >
         </activity>
+        <activity
+            android:name=".PeerActivity"
+            android:label="@string/title_activity_peer" >
+        </activity>
     </application>
 
 </manifest>

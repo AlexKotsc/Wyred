@@ -1,7 +1,5 @@
 package alexkotsc.wyred.peer;
 
-import android.net.wifi.WpsInfo;
-import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 
 /**
@@ -14,7 +12,8 @@ public class Peer implements IPeer {
     private WifiP2pDevice wifiP2pDevice = null;
 
     public Peer(){
-
+        peerName = "testPeer";
+        publicKey = "testPublicKey";
     }
 
     @Override

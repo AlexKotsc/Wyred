@@ -12,4 +12,5 @@
     <string name="title_activity_key_generator">KeyGenerator</string>
     <string name="title_activity_conversation">ConversationActivity</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_peer">PeerActivity</string>
 </resources>
