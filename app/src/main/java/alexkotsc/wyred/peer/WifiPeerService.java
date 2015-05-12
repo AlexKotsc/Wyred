@@ -246,7 +246,7 @@ public class WifiPeerService extends Service {
             if(thisDevice==null){
                 record.put("name", "unknown");
             } else {
-                record.put("name", "WYRED-" + activity.getPeerName());
+                record.put("name", "WYRED-" + hashCode());
             }
 
             record.put("publicKey", "test1234test");

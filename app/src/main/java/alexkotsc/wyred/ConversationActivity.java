@@ -31,9 +31,12 @@ public class ConversationActivity extends ActionBarActivity {
         Intent i = getIntent();
 
         Peer currentPeer = i.getParcelableExtra("peer");
+        if(currentPeer!=null) {
 
-        Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
 
+
+        }
         String publicKey = null;
 
         if((publicKey = i.getStringExtra("publicKey"))==null){
