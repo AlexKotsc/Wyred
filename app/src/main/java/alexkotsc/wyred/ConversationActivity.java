@@ -10,10 +10,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import alexkotsc.wyred.db.WyredOpenHelper;
+import alexkotsc.wyred.peer.Peer;
 
 
 public class ConversationActivity extends ActionBarActivity {
@@ -27,6 +29,10 @@ public class ConversationActivity extends ActionBarActivity {
         setContentView(R.layout.activity_conversation2);
 
         Intent i = getIntent();
+
+        Peer currentPeer = i.getParcelableExtra("peer");
+
+        Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
 
         String publicKey = null;
 

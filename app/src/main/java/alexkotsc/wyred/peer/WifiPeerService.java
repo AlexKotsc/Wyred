@@ -98,18 +98,6 @@ public class WifiPeerService extends Service {
 
                 requestPeers();
             }
-
-            /*if(txtRecordMap.get("wyred").equals("enabled")){
-                Peer tempPeer = new Peer();
-                tempPeer.setWifiP2pDevice(srcDevice);
-                tempPeer.setPeerName(txtRecordMap.get("name"));
-                tempPeer.setPublicKey(txtRecordMap.get("publicKey"));
-
-                peers.put(tempPeer.getDeviceAddress(), tempPeer);
-
-                currentPeers.add(srcDevice);
-                peerMap.put(srcDevice.deviceAddress, srcDevice);
-            }*/
         }
     }
 
@@ -121,7 +109,7 @@ public class WifiPeerService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mReceiver = new mReceiver(this);
+        mReceiver = new mReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
@@ -258,7 +246,7 @@ public class WifiPeerService extends Service {
             if(thisDevice==null){
                 record.put("name", "unknown");
             } else {
-                record.put("name", "WYRED-" + thisDevice.deviceName);
+                record.put("name", "WYRED-" + activity.getPeerName());
             }
 
             record.put("publicKey", "test1234test");
@@ -320,7 +308,7 @@ public class WifiPeerService extends Service {
         mManager.discoverServices(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-
+                requestPeers();
             }
 
             @Override
@@ -393,12 +381,6 @@ public class WifiPeerService extends Service {
 
     public class mReceiver extends BroadcastReceiver {
 
-        WifiPeerService wifiPeerService;
-
-        public mReceiver(WifiPeerService ws){
-            wifiPeerService = ws;
-        }
-
         public mReceiver () {}
 
         @Override
@@ -408,20 +390,19 @@ public class WifiPeerService extends Service {
             if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
                 int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
                 if(state == WifiP2pManager.WIFI_P2P_STATE_ENABLED){
-                    wifiPeerService.changeState(true);
+                    changeState(true);
                 } else {
-                    wifiPeerService.changeState(false);
+                    changeState(false);
                 }
             } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
-                wifiPeerService.requestPeers();
+                requestPeers();
             } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-                wifiPeerService.connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
+                connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
                 WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
                 thisDevice = device;
                 Log.d(TAG, "local device set! " + thisDevice.deviceName);
                 startServiceRegistration();
-
             }
         }
     }

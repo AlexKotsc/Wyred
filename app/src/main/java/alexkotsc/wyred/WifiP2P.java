@@ -206,4 +206,9 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
     public void handlePeers(HashMap<String, Peer> peers) {
         receivePeers(peers);
     }
+
+    @Override
+    public String getPeerName() {
+        return String.valueOf(hashCode());
+    }
 }

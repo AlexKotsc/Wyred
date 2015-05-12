@@ -1,11 +1,13 @@
 package alexkotsc.wyred.peer;
 
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * Created by AlexKotsc on 21-04-2015.
  */
-public class Peer implements IPeer {
+public class Peer implements IPeer, Parcelable {
 
     private String peerName = null;
     private String publicKey = null;
@@ -59,4 +61,35 @@ public class Peer implements IPeer {
     public void setWifiP2pDevice(WifiP2pDevice wifiP2pDevice) {
         this.wifiP2pDevice = wifiP2pDevice;
     }
+
+    protected Peer(Parcel in) {
+        peerName = in.readString();
+        publicKey = in.readString();
+        wifiP2pDevice = (WifiP2pDevice) in.readValue(WifiP2pDevice.class.getClassLoader());
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(peerName);
+        dest.writeString(publicKey);
+        dest.writeValue(wifiP2pDevice);
+    }
+
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<Peer> CREATOR = new Parcelable.Creator<Peer>() {
+        @Override
+        public Peer createFromParcel(Parcel in) {
+            return new Peer(in);
+        }
+
+        @Override
+        public Peer[] newArray(int size) {
+            return new Peer[size];
+        }
+    };
 }

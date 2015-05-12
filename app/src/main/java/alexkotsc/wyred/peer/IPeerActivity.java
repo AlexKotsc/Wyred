@@ -10,4 +10,6 @@ public interface IPeerActivity {
 
     public void handlePeers(HashMap<String,Peer> peers);
 
+    public String getPeerName();
+
 }
