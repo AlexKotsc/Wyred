@@ -16,6 +16,7 @@ import android.widget.ExpandableListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,9 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     WifiPeerService wifiPeerService;
 
     HashMap<String, Peer> currentPeers;
+    HashMap<String, Peer> visiblePeers;
+    List<Peer> availablePeers;
+    List<Peer> unavailablePeers;
 
     String peerName;
 
@@ -46,7 +50,8 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_peer);
 
-
+        availablePeers = new ArrayList<>();
+        unavailablePeers = new ArrayList<>();
 
         elv = (ExpandableListView) findViewById(R.id.expandableListView);
 
@@ -76,12 +81,12 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
         listData = new HashMap<>();
 
-        List<Peer> availablePeers = new ArrayList<>();
+        //List<Peer> availablePeers = new ArrayList<>();
         /*availablePeers.add(new Peer());
         availablePeers.add(new Peer());
         availablePeers.add(new Peer());*/
 
-        List<Peer> unavailablePeers = new ArrayList<>();
+        //List<Peer> unavailablePeers = new ArrayList<>();
         /*unavailablePeers.add(new Peer());
         unavailablePeers.add(new Peer());
         unavailablePeers.add(new Peer());
@@ -132,6 +137,7 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         Log.d(TAG, "Binding to service.");
 
         Intent i = new Intent(this, WifiPeerService.class);
+        i.putExtra("name", "PeerActivity: " + hashCode());
         bindService(i, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -161,9 +167,36 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     public void handlePeers(HashMap<String, Peer> peers) {
         Log.d(TAG, "Received current peers from service.");
 
-        currentPeers = peers;
+        for(Peer p : peers.values()){
+            if(!availablePeers.contains(p)){
+                availablePeers.add(p);
+            }
+        }
 
-        if(peers != null){
+        Iterator<Peer> availableIterator = availablePeers.iterator();
+        while(availableIterator.hasNext()){
+
+            Peer peer = availableIterator.next();
+            if(!peers.values().contains(peer)){
+                if(!unavailablePeers.contains(peer)) {
+                    unavailablePeers.add(peer);
+                }
+                availableIterator.remove();
+            }
+        }
+
+        Iterator<Peer> unavailableIterator = unavailablePeers.iterator();
+        while(unavailableIterator.hasNext()){
+            Peer peer = unavailableIterator.next();
+
+            if(availablePeers.contains(peer)){
+                unavailableIterator.remove();
+            }
+        }
+
+        updateAdapter();
+
+        /*if(peers != null){
 
             List<Peer> tempList = new ArrayList<>();
 
@@ -175,13 +208,13 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
             listData.put(listHeaders.get(0), tempList);
 
-            updateAdapter();
+
 
         }
 
         for(Map.Entry<String, Peer> e : peers.entrySet()){
             Log.d(TAG, e.toString());
-        }
+        }*/
     }
 
     @Override
@@ -190,6 +223,9 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     }
 
     private void updateAdapter() {
+        listData.put(listHeaders.get(0), availablePeers);
+        listData.put(listHeaders.get(1), unavailablePeers);
+
         listAdapter = new PeerExpandableListAdapter(this, listHeaders, listData);
 
         elv.setAdapter(listAdapter);

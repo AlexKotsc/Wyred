@@ -52,7 +52,15 @@ public class WifiPeerService extends Service {
 
     private WifiP2pDevice currentlyConnectedTo = null;
 
+    private final String INSTANCE_NAME = "wyred";
+    private final String REG_TYPE = "_aodv._tcp";
+
+    private String DNS_PUBLIC_KEY;
+    private String DNS_PEER_NAME;
+
     private final String TAG = "WifiPeerService";
+
+    private HashMap<String, Peer> visiblePeers;
 
     public void clearGroups() {
         //Use reflection if it's possible to clear groups.
@@ -109,6 +117,8 @@ public class WifiPeerService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        Log.d(TAG, "onCreate - does this even get called?!");
+
         mReceiver = new mReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
@@ -120,6 +130,12 @@ public class WifiPeerService extends Service {
         registerReceiver(mReceiver, intentFilter);
 
         currentPeers = new ArrayList<>();
+        visiblePeers = new HashMap<>();
+
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+
+        //startServiceRegistration();
     }
 
     @Override
@@ -134,6 +150,7 @@ public class WifiPeerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "onStartCommand - does this get called?");
         if(mManager == null) {
             //Log.d(TAG, "WifiP2pManager initialized");
             mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -153,7 +170,7 @@ public class WifiPeerService extends Service {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
 
-                    if(currentlyConnectedTo != null){
+                    if (currentlyConnectedTo != null) {
                         Toast.makeText(WifiPeerService.this, "Connected to " + currentlyConnectedTo.deviceName, Toast.LENGTH_SHORT).show();
                     }
                     final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
@@ -164,15 +181,15 @@ public class WifiPeerService extends Service {
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                try{
+                                try {
                                     ServerSocket serverSocket = new ServerSocket(8080);
                                     Socket socketClient = null;
 
-                                    while(true) {
+                                    while (true) {
                                         socketClient = serverSocket.accept();
 
                                         ServerAsyncTask serverAsyncTask = new ServerAsyncTask();
-                                        serverAsyncTask.execute(new Socket[] {socketClient});
+                                        serverAsyncTask.execute(new Socket[]{socketClient});
                                         Log.d(TAG, "Connected with client");
 
                                     }
@@ -196,7 +213,7 @@ public class WifiPeerService extends Service {
 
                                     String result = null;
 
-                                    while(socket.isConnected()){
+                                    while (socket.isConnected()) {
                                         InputStream is = socket.getInputStream();
 
                                         PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
@@ -229,11 +246,15 @@ public class WifiPeerService extends Service {
     }
 
     public void requestPeers() {
+        if(visiblePeers!=null){
+            activity.handlePeers(visiblePeers);
+        }
+        /*
         if(mManager != null){
             if(activity!=null){
-                activity.handlePeers(peers);
+                activity.handlePeers(visiblePeers);
             }
-        }
+        }*/
     }
 
     private void startServiceRegistration(){
@@ -246,21 +267,21 @@ public class WifiPeerService extends Service {
             if(thisDevice==null){
                 record.put("name", "unknown");
             } else {
-                record.put("name", "WYRED-" + hashCode());
+                record.put("name", "WYRED-" + thisDevice.deviceName);
+                Log.d(TAG, (String) record.get("name"));
             }
-
             record.put("publicKey", "test1234test");
 
             record.put("available", "visible");
             record.put("wyred","enabled");
 
-            WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance("_wyredapp", "_aodv._tcp", record);
+            WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance(INSTANCE_NAME, REG_TYPE, record);
 
             mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
 
                 @Override
                 public void onSuccess() {
-                    discoverServices();
+
                 }
 
                 @Override
@@ -268,53 +289,74 @@ public class WifiPeerService extends Service {
                     Log.e(TAG, "Local service could not be started: " + reason);
                 }
             });
+
+            discoverServices();
         }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        if(mManager == null) {
-            mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-            mChannel = mManager.initialize(this,getMainLooper(), null);
+        Log.d(TAG, "onBind - when does this get called?");
 
-            mManager.setDnsSdResponseListeners(mChannel, dnsSdServiceResponseListener, dnsSdTxtRecordListener);
-            discoverServices();
+        String deviceName = intent.getStringExtra("name");
+
+        if(deviceName != null){
+            DNS_PEER_NAME = deviceName;
         }
 
         return binder;
     }
 
-    private void setServiceListeners(){
+    public void discoverServices() {
+
+        visiblePeers.clear();
+
+        mManager.setDnsSdResponseListeners(mChannel, new WifiP2pManager.DnsSdServiceResponseListener() {
+            @Override
+            public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice srcDevice) {
+                if (instanceName.equals(INSTANCE_NAME)) {
+                    Log.d(TAG, "onDnsSdService: " + srcDevice.hashCode());
+                }
+            }
+        }, new WifiP2pManager.DnsSdTxtRecordListener() {
+            @Override
+            public void onDnsSdTxtRecordAvailable(String fullDomainName, Map<String, String> txtRecordMap, WifiP2pDevice srcDevice) {
+                if (txtRecordMap.get("wyred") != null) {
+                    Peer peer = new Peer();
+
+                    peer.setPublicKey(txtRecordMap.get("publicKey"));
+                    peer.setPeerName(txtRecordMap.get("name"));
+                    peer.setWifiP2pDevice(srcDevice);
+
+                    visiblePeers.put(peer.getPublicKey(), peer);
+                    requestPeers();
+                }
+            }
+        });
+
         WifiP2pDnsSdServiceRequest serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
 
-        mManager.addServiceRequest(mChannel, serviceRequest, new WifiP2pManager.ActionListener(){
+        mManager.addServiceRequest(mChannel, serviceRequest, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
 
-                    @Override
-                    public void onSuccess() {
-                        Log.d(TAG, "Service request succesfully added.");
-                    }
+            }
 
-                    @Override
-                    public void onFailure(int reason) {
-                        Log.e(TAG, "FAILED to add service request: " + reason);
-                    }
-                }
-        );
-    }
-
-    public void discoverServices() {
-        setServiceListeners();
+            @Override
+            public void onFailure(int reason) {
+                Log.e(TAG, "addServiceRequest failed: " + reason);
+            }
+        });
 
         mManager.discoverServices(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                requestPeers();
+
             }
 
             @Override
             public void onFailure(int reason) {
                 Log.e(TAG, "FAILED to discover services: " + reason);
-
                 changeState(false);
 
                 if (reason == WifiP2pManager.NO_SERVICE_REQUESTS) {
@@ -328,7 +370,7 @@ public class WifiPeerService extends Service {
                                 @Override
                                 public void onSuccess() {
                                     // reset the service listeners, service requests, and discovery
-                                    setServiceListeners();
+                                    discoverServices();
                                 }
 
                                 @Override
