@@ -92,4 +92,16 @@ public class Peer implements IPeer, Parcelable {
             return new Peer[size];
         }
     };
+
+    @Override
+    public boolean equals(Object o) {
+
+        Peer otherPeer = (Peer) o;
+
+        if(getDeviceName().equals(otherPeer.getDeviceName())){
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

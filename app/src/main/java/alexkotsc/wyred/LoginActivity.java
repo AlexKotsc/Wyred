@@ -1,6 +1,11 @@
 package alexkotsc.wyred;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -8,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import alexkotsc.wyred.db.WyredOpenHelper;
 
@@ -19,6 +25,8 @@ public class LoginActivity extends ActionBarActivity {
     Button newUserBtn, clearBtn, submitBtn;
     EditText username, password;
 
+    public static final String PREF_NAME = "wyred_prefs";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,6 +36,8 @@ public class LoginActivity extends ActionBarActivity {
 
         newUserBtn = (Button) findViewById(R.id.loginNewUserBtn);
         newUserBtn.setBackground(null);
+        newUserBtn.setTypeface(newUserBtn.getTypeface(), Typeface.ITALIC);
+        newUserBtn.setTextColor(Color.GRAY);
         newUserBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -35,6 +45,71 @@ public class LoginActivity extends ActionBarActivity {
                 startActivity(i);
             }
         });
+
+        submitBtn = (Button) findViewById(R.id.loginLoginBtn);
+        submitBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                submitLogin();
+            }
+        });
+
+        clearBtn = (Button) findViewById(R.id.loginClearBtn);
+        clearBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearFields();
+            }
+        });
+
+        username = (EditText) findViewById(R.id.loginUserText);
+
+        password = (EditText) findViewById(R.id.loginPasswordText);
+    }
+
+    private void clearFields() {
+        username.getText().clear();
+        password.getText().clear();
+        username.requestFocus();
+    }
+
+    private void submitLogin() {
+        SQLiteDatabase sqlRead = dbHelper.getReadableDatabase();
+
+        String selection = "username = ? AND password = ?";
+        String[] selectionArgs = new String[]{password.getText().toString(),username.getText().toString()};
+
+
+        Cursor c = sqlRead.query(WyredOpenHelper.TABLE_NAME_USERS, null, selection,
+                selectionArgs, null, null, null);
+
+        c.moveToFirst();
+
+        if(c.getCount()==1){
+            //Set shared preferences.
+
+            Toast.makeText(this, c.getString(c.getColumnIndex("screenname")), Toast.LENGTH_SHORT).show();
+
+            Toast.makeText(this, "Login succesful!", Toast.LENGTH_LONG).show();
+
+            SharedPreferences.Editor prefEditor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
+            prefEditor.putString("username", username.getText().toString());
+            prefEditor.putString("password", password.getText().toString());
+            prefEditor.putString("screenname", c.getString(3));
+            prefEditor.commit();
+
+            Intent i = new Intent(this, PeerActivity.class);
+
+            startActivity(i);
+
+            sqlRead.close();
+            return;
+        } else {
+            Toast.makeText(this, "Login failed, please try again.", Toast.LENGTH_LONG).show();
+            password.getText().clear();
+        }
+
+        sqlRead.close();
     }
 
     @Override

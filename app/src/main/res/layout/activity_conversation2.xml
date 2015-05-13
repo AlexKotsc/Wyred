@@ -39,7 +39,7 @@
         <ImageButton
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:id="@+id/imageButton"
+            android:id="@+id/conversationBackBtn"
             android:layout_centerVertical="true"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"

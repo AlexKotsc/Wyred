@@ -12,6 +12,7 @@ import alexkotsc.wyred.WifiP2P;
  */
 public class WyredOpenHelper extends SQLiteOpenHelper {
 
+    private static final String TAG = "WyredOpenHelper";
     private static final int DATABASE_VERSION = 2;
     private static final String DATABASE_NAME = "wyred";
     public static final String TABLE_NAME_MESSAGES = "wyred_messages";
@@ -38,16 +39,18 @@ public class WyredOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        Log.d(TAG, "onCreate - does this run?");
         //Create table for storing messages.
         db.execSQL(TABLE_CREATE_MESSAGES);
 
         //Create table for storing users.
+        Log.d(TAG, "Created " + TABLE_NAME_USERS);
         db.execSQL(TABLE_CREATE_USERS);
 
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.d(WifiP2P.TAG, "Upgrade DB called");
+        Log.d(TAG, "Upgrade DB called");
     }
 }

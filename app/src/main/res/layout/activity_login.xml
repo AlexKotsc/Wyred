@@ -70,7 +70,7 @@
                 <EditText
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/editText2"
+                    android:id="@+id/loginUserText"
                     android:textIsSelectable="false"
                     android:textSize="14dp" />
 
@@ -99,7 +99,7 @@
                     android:layout_height="wrap_content"
                     android:inputType="textPassword"
                     android:ems="10"
-                    android:id="@+id/editText3"
+                    android:id="@+id/loginPasswordText"
                     android:textSize="14dp" />
             </LinearLayout>
 
@@ -113,14 +113,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Clear"
-                    android:id="@+id/button2"
+                    android:id="@+id/loginClearBtn"
                     android:layout_weight="0.2" />
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Login"
-                    android:id="@+id/button3"
+                    android:id="@+id/loginLoginBtn"
                     android:layout_weight="0.8" />
             </LinearLayout>
 

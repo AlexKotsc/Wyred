@@ -29,6 +29,10 @@ public class UserActivity extends ActionBarActivity {
 
         db = new WyredOpenHelper(this);
 
+        username = (EditText) findViewById(R.id.userNameText);
+        password = (EditText) findViewById(R.id.userPasswordText);
+        screenname = (EditText) findViewById(R.id.userScreenNameText);
+
         clearBtn = (Button) findViewById(R.id.userClearBtn);
         clearBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -48,7 +52,7 @@ public class UserActivity extends ActionBarActivity {
 
     private void submitFields() {
         SQLiteDatabase sqlRead = db.getReadableDatabase();
-        Cursor c = sqlRead.query(WyredOpenHelper.TABLE_NAME_USERS, null, "username='?'", new String[]{username.getText().toString()}, null, null, null);
+        Cursor c = sqlRead.query(WyredOpenHelper.TABLE_NAME_USERS, null, "username=?", new String[]{username.getText().toString()}, null, null, null);
 
         if(c.getCount()>0){
             Toast.makeText(this, "Username already exists, please choose another.", Toast.LENGTH_LONG).show();

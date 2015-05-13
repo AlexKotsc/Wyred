@@ -8,6 +8,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +25,9 @@ public class ConversationActivity extends ActionBarActivity {
     WyredOpenHelper wyredOpenHelper;
     private int messageCount = 0;
 
+    ImageButton backBtn;
+    TextView titleText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,11 +37,11 @@ public class ConversationActivity extends ActionBarActivity {
 
         Peer currentPeer = i.getParcelableExtra("peer");
         if(currentPeer!=null) {
-
             Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
-
-
         }
+
+        titleText = (TextView) findViewById(R.id.conversationPeerName);
+        titleText.setText(currentPeer.getPeerName());
         String publicKey = null;
 
         if((publicKey = i.getStringExtra("publicKey"))==null){
@@ -120,6 +125,14 @@ public class ConversationActivity extends ActionBarActivity {
         } else {
             messageCounter.setText(Integer.toString(messageCount) + " messages");
         }
+
+        backBtn = (ImageButton) findViewById(R.id.conversationBackBtn);
+        backBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 
 
     }

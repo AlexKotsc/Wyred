@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -29,6 +30,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import alexkotsc.wyred.LoginActivity;
 
 /**
  * Created by AlexKotsc on 22-04-2015.
@@ -61,6 +64,8 @@ public class WifiPeerService extends Service {
     private final String TAG = "WifiPeerService";
 
     private HashMap<String, Peer> visiblePeers;
+
+    private String screenName;
 
     public void clearGroups() {
         //Use reflection if it's possible to clear groups.
@@ -117,7 +122,9 @@ public class WifiPeerService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        Log.d(TAG, "onCreate - does this even get called?!");
+        //Log.d(TAG, "onCreate - does this even get called?!");
+        SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+        screenName = sharedPreferences.getString("screenname", "notfound");
 
         mReceiver = new mReceiver();
 
@@ -267,7 +274,8 @@ public class WifiPeerService extends Service {
             if(thisDevice==null){
                 record.put("name", "unknown");
             } else {
-                record.put("name", "WYRED-" + thisDevice.deviceName);
+                //record.put("name", "WYRED-" + thisDevice.deviceName);
+                record.put("name", screenName);
                 Log.d(TAG, (String) record.get("name"));
             }
             record.put("publicKey", "test1234test");
@@ -308,6 +316,9 @@ public class WifiPeerService extends Service {
     }
 
     public void discoverServices() {
+
+        SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+        Toast.makeText(this, sharedPreferences.getString("screenname", "Screenname not found"), Toast.LENGTH_SHORT).show();
 
         visiblePeers.clear();
 
