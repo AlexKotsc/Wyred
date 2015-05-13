@@ -1,17 +1,40 @@
 package alexkotsc.wyred;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import alexkotsc.wyred.db.WyredOpenHelper;
 
 
 public class LoginActivity extends ActionBarActivity {
+
+    WyredOpenHelper dbHelper;
+
+    Button newUserBtn, clearBtn, submitBtn;
+    EditText username, password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        dbHelper = new WyredOpenHelper(this);
+
+        newUserBtn = (Button) findViewById(R.id.loginNewUserBtn);
+        newUserBtn.setBackground(null);
+        newUserBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(LoginActivity.this, UserActivity.class);
+                startActivity(i);
+            }
+        });
     }
 
     @Override

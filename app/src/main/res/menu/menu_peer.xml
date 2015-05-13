@@ -3,4 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools" tools:context="alexkotsc.wyred.PeerActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
+    <item
+        android:id="@+id/action_search"
+        android:title="Discover peers"
+        android:icon="@drawable/ic_menu_search"
+        android:orderInCategory="1"
+        app:showAsAction="ifRoom"
+        />
 </menu>

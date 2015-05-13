@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListAdapter;
@@ -38,8 +39,6 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
     WifiPeerService wifiPeerService;
 
-    HashMap<String, Peer> currentPeers;
-    HashMap<String, Peer> visiblePeers;
     List<Peer> availablePeers;
     List<Peer> unavailablePeers;
 
@@ -58,7 +57,6 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         setupTestData();
         updateAdapter();
 
-
         elv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
@@ -67,11 +65,9 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
                 Intent i = new Intent(PeerActivity.this, ConversationActivity.class);
                 i.putExtra("peer", peer);
                 startActivity(i);
-                //Toast.makeText(PeerActivity.this, peer.hashCode() + " clicked", Toast.LENGTH_SHORT).show();
                 return true;
             }
         });
-
     }
 
     private void setupTestData() {
@@ -98,24 +94,22 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_peer, menu);
-        return true;
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_peer, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()){
+            case R.id.action_settings:
+                return true;
+            case R.id.action_search:
+                wifiPeerService.discoverServices();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -195,26 +189,6 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         }
 
         updateAdapter();
-
-        /*if(peers != null){
-
-            List<Peer> tempList = new ArrayList<>();
-
-            for(Map.Entry<String,Peer> e : peers.entrySet()){
-
-                tempList.add(e.getValue());
-
-            }
-
-            listData.put(listHeaders.get(0), tempList);
-
-
-
-        }
-
-        for(Map.Entry<String, Peer> e : peers.entrySet()){
-            Log.d(TAG, e.toString());
-        }*/
     }
 
     @Override
