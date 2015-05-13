@@ -9,12 +9,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import alexkotsc.wyred.db.WyredOpenHelper;
 import alexkotsc.wyred.peer.Peer;
@@ -26,7 +29,12 @@ public class ConversationActivity extends ActionBarActivity {
     private int messageCount = 0;
 
     ImageButton backBtn;
-    TextView titleText;
+    TextView titleText, messageCounter;
+    Button sendBtn;
+    EditText msgText;
+
+    Peer currentPeer;
+    ListView messagesList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,90 +43,22 @@ public class ConversationActivity extends ActionBarActivity {
 
         Intent i = getIntent();
 
-        Peer currentPeer = i.getParcelableExtra("peer");
+        currentPeer = i.getParcelableExtra("peer");
         if(currentPeer!=null) {
             Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
         }
 
+        msgText = (EditText) findViewById(R.id.conversationMessageText);
+
         titleText = (TextView) findViewById(R.id.conversationPeerName);
         titleText.setText(currentPeer.getPeerName());
-        String publicKey = null;
 
-        if((publicKey = i.getStringExtra("publicKey"))==null){
-            publicKey = "TestKey";
-        }
+        messagesList = (ListView) findViewById(R.id.conversationMessageList);
+        messagesList.setEmptyView(findViewById(R.id.emptylist));
 
-        ArrayList<ChatMessage> messages = new ArrayList<>();
+        readMessages();
 
-        ChatMessage cm1 = new ChatMessage(true);
-        cm1.setMessage("Besked 1");
-        cm1.setPeerPublicKey("TestKey");
-        messages.add(cm1);
-        ChatMessage cm2 = new ChatMessage(false);
-        cm2.setMessage("Besked 2");
-        cm2.setPeerPublicKey("TestKey");
-        messages.add(cm2);
-        ChatMessage cm3 = new ChatMessage(true);
-        cm3.setMessage("Besked 3");
-        cm3.setPeerPublicKey("TestKey");
-        messages.add(cm3);
-        ChatMessage cm4 = new ChatMessage(true);
-        cm4.setMessage("Besked 4");
-        cm4.setPeerPublicKey("TestKey");
-        messages.add(cm4);
-        ChatMessage cm5 = new ChatMessage(true);
-        cm5.setMessage("Besked 5");
-        cm5.setPeerPublicKey("pkey");
-        messages.add(cm5);
-
-        ArrayList<ChatMessage> newMessages = new ArrayList<>();
-
-        wyredOpenHelper = new WyredOpenHelper(this);
-        SQLiteDatabase database = wyredOpenHelper.getWritableDatabase();
-
-        for(ChatMessage c : messages){
-            database.insert("wyred_messages", null, c.generateInsertValues());
-        }
-
-        database.close();
-
-        database = wyredOpenHelper.getReadableDatabase();
-        Cursor results = database.query("wyred_messages", null, "publicKey = '" +  publicKey + "'", null, null, null, null);
-
-        messageCount = results.getCount();
-
-        results.moveToFirst();
-        while(results.isAfterLast()== false){
-            ChatMessage temp = new ChatMessage();
-
-            if(results.getInt(results.getColumnIndex("isSender"))==1){
-                temp.isSender(true);
-            } else {
-                temp.isSender(false);
-            }
-
-            temp.setMessage(results.getString(results.getColumnIndex("message")));
-            temp.setPeerPublicKey(results.getString(results.getColumnIndex("publicKey")));
-            temp.setDate(results.getString(results.getColumnIndex("timestamp")));
-
-            newMessages.add(temp);
-
-            Log.d(WifiP2P.TAG, temp.getMessage());
-
-            results.moveToNext();
-        }
-
-
-        wyredOpenHelper.close();
-
-
-        ListView listView = (ListView) findViewById(R.id.conversationMessageList);
-        listView.setEmptyView(findViewById(R.id.emptymessages));
-        MessageAdapter messageAdapter = new MessageAdapter(this, 0, newMessages);
-        listView.setAdapter(messageAdapter);
-        listView.setSelection(messageAdapter.getCount() - 1);
-
-        TextView messageCounter = (TextView) findViewById(R.id.conversationMessageCounter);
+        messageCounter = (TextView) findViewById(R.id.conversationMessageCounter);
 
         if(messageCount == 1){
             messageCounter.setText(Integer.toString(messageCount) + " message");
@@ -134,7 +74,65 @@ public class ConversationActivity extends ActionBarActivity {
             }
         });
 
+        sendBtn = (Button) findViewById(R.id.conversationSendMessageButton);
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendMessage();
+            }
+        });
+    }
 
+    private void sendMessage() {
+        storeMessage();
+
+        //sendMessage();
+
+        readMessages();
+
+    }
+
+    private void storeMessage() {
+        ChatMessage msg = new ChatMessage();
+
+        msg.setMessage(msgText.getText().toString());
+        msg.setPeerPublicKey(currentPeer.getPublicKey());
+        msg.isSender(true);
+
+        SQLiteDatabase dbWrite = wyredOpenHelper.getWritableDatabase();
+
+        dbWrite.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, msg.generateInsertValues());
+
+        dbWrite.close();
+    }
+
+    private void readMessages() {
+        SQLiteDatabase dbRead = wyredOpenHelper.getReadableDatabase();
+        List<ChatMessage> messages = new ArrayList<>();
+
+        Cursor c = dbRead.query(WyredOpenHelper.TABLE_NAME_MESSAGES,
+                null, "publicKey=?", new String[]{currentPeer.getPublicKey()}, null, null, null, null);
+
+        messageCount = c.getCount();
+
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+            ChatMessage msg = new ChatMessage();
+
+            msg.isSender(c.getInt(c.getColumnIndex("isSender"))==1);
+            msg.setMessage(c.getString(c.getColumnIndex("message")));
+            msg.setPeerPublicKey(c.getString(c.getColumnIndex("publicKey")));
+            msg.setDate(c.getString(c.getColumnIndex("timestamp")));
+
+            messages.add(msg);
+
+            c.moveToNext();
+        }
+        dbRead.close();
+
+        MessageAdapter msgAdapter = new MessageAdapter(this, 0, messages);
+        messagesList.setAdapter(msgAdapter);
+        messagesList.setSelection(msgAdapter.getCount()-1);
     }
 
     @Override
