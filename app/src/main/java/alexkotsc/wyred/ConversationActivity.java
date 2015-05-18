@@ -1,9 +1,14 @@
 package alexkotsc.wyred;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -17,54 +22,44 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import alexkotsc.wyred.db.WyredOpenHelper;
+import alexkotsc.wyred.peer.ConnectionManager;
+import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
+import alexkotsc.wyred.peer.WifiPeerService;
 
 
-public class ConversationActivity extends ActionBarActivity {
+public class ConversationActivity extends ActionBarActivity implements IPeerActivity {
 
+    private static final String TAG = "ConversationActivity";
     WyredOpenHelper wyredOpenHelper;
     private int messageCount = 0;
-
-    ImageButton backBtn;
-    TextView titleText, messageCounter;
-    Button sendBtn;
-    EditText msgText;
-
-    Peer currentPeer;
-    ListView messagesList;
+    private boolean wifiBound;
+    private WifiPeerService wifiPeerService;
+    private String peerName;
+    private Peer currentPeer;
+    private TextView messageCounter, messagePeername;
+    private Button sendBtn;
+    private ImageButton backBtn;
+    private EditText inputText;
+    private ListView messageList;
+    private ConnectionManager conMan;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation2);
 
-        Intent i = getIntent();
-
-        currentPeer = i.getParcelableExtra("peer");
-        if(currentPeer!=null) {
-            Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
-        }
-
-        msgText = (EditText) findViewById(R.id.conversationMessageText);
-
-        titleText = (TextView) findViewById(R.id.conversationPeerName);
-        titleText.setText(currentPeer.getPeerName());
-
-        messagesList = (ListView) findViewById(R.id.conversationMessageList);
-        messagesList.setEmptyView(findViewById(R.id.emptylist));
-
-        readMessages();
-
-        messageCounter = (TextView) findViewById(R.id.conversationMessageCounter);
-
-        if(messageCount == 1){
-            messageCounter.setText(Integer.toString(messageCount) + " message");
-        } else {
-            messageCounter.setText(Integer.toString(messageCount) + " messages");
-        }
+        sendBtn = (Button) findViewById(R.id.conversationSendMessageButton);
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendMessage();
+            }
+        });
 
         backBtn = (ImageButton) findViewById(R.id.conversationBackBtn);
         backBtn.setOnClickListener(new View.OnClickListener() {
@@ -74,65 +69,102 @@ public class ConversationActivity extends ActionBarActivity {
             }
         });
 
-        sendBtn = (Button) findViewById(R.id.conversationSendMessageButton);
-        sendBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendMessage();
-            }
-        });
+        inputText = (EditText) findViewById(R.id.conversationMessageText);
+
+        Intent i = getIntent();
+
+        currentPeer = i.getParcelableExtra("peer");
+        if(currentPeer!=null) {
+            Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
+        }
+
+        String publicKey = null;
+
+        if((publicKey = i.getStringExtra("publicKey"))==null){
+            publicKey = "TestKey";
+        }
+
+        peerName = i.getStringExtra("peername");
+
+        messageList = (ListView) findViewById(R.id.conversationMessageList);
+        messageList.setEmptyView(findViewById(R.id.emptymessages));
+
+        updateMessages();
+
+        messagePeername = (TextView) findViewById(R.id.conversationPeerName);
+        messagePeername.setText(currentPeer.getPeerName());
+
+
+
     }
 
     private void sendMessage() {
-        storeMessage();
 
-        //sendMessage();
+        ChatMessage cm = new ChatMessage();
+        cm.isSender(true);
+        cm.setPeerPublicKey(currentPeer.getPublicKey() + "pk");
+        cm.setMessage(inputText.getText().toString());
 
-        readMessages();
+        SQLiteDatabase db = wyredOpenHelper.getWritableDatabase();
 
-    }
+        Long rowId = db.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, cm.generateInsertValues());
 
-    private void storeMessage() {
-        ChatMessage msg = new ChatMessage();
+        db.close();
 
-        msg.setMessage(msgText.getText().toString());
-        msg.setPeerPublicKey(currentPeer.getPublicKey());
-        msg.isSender(true);
+        db = wyredOpenHelper.getReadableDatabase();
 
-        SQLiteDatabase dbWrite = wyredOpenHelper.getWritableDatabase();
+        Cursor c = db.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "id = ?", new String[]{rowId.toString()}, null, null,  null);
 
-        dbWrite.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, msg.generateInsertValues());
+        List<ChatMessage> fetchedMessages = fetchMessages(c);
 
-        dbWrite.close();
-    }
+        if(conMan != null){
+            ChatMessage msg = fetchedMessages.get(0);
 
-    private void readMessages() {
-        SQLiteDatabase dbRead = wyredOpenHelper.getReadableDatabase();
-        List<ChatMessage> messages = new ArrayList<>();
+            msg.isSender(!msg.isSender());
+            msg.setPeerPublicKey(peerName + "pk");
 
-        Cursor c = dbRead.query(WyredOpenHelper.TABLE_NAME_MESSAGES,
-                null, "publicKey=?", new String[]{currentPeer.getPublicKey()}, null, null, null, null);
-
-        messageCount = c.getCount();
-
-        c.moveToFirst();
-        while(!c.isAfterLast()){
-            ChatMessage msg = new ChatMessage();
-
-            msg.isSender(c.getInt(c.getColumnIndex("isSender"))==1);
-            msg.setMessage(c.getString(c.getColumnIndex("message")));
-            msg.setPeerPublicKey(c.getString(c.getColumnIndex("publicKey")));
-            msg.setDate(c.getString(c.getColumnIndex("timestamp")));
-
-            messages.add(msg);
-
-            c.moveToNext();
+            conMan.write(msg.toJSON().getBytes());
         }
-        dbRead.close();
+        //wifiPeerService.sendMessage(fetchedMessages.get(0));
 
-        MessageAdapter msgAdapter = new MessageAdapter(this, 0, messages);
-        messagesList.setAdapter(msgAdapter);
-        messagesList.setSelection(msgAdapter.getCount()-1);
+        db.close();
+
+
+
+        updateMessages();
+        inputText.getText().clear();
+
+    }
+
+    private void updateMessages() {
+
+        List<ChatMessage> newMessages;
+
+        wyredOpenHelper = new WyredOpenHelper(this);
+
+        SQLiteDatabase database = wyredOpenHelper.getReadableDatabase();
+        Cursor results = database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?", new String[]{(currentPeer.getPublicKey()+"pk")},null,null,null,null);
+        //Cursor results = database.query("wyred_messages", null, "publicKey = '" +  currentPeer.getPublicKey() + "'", null, null, null, null);
+
+        messageCount = results.getCount();
+
+        Log.d(TAG, "Fetched: " + currentPeer.getPublicKey() + ", " + messageCount);
+
+        newMessages = fetchMessages(results);
+
+        wyredOpenHelper.close();
+
+        MessageAdapter messageAdapter = new MessageAdapter(this, 0, newMessages);
+        messageList.setAdapter(messageAdapter);
+        messageList.setSelection(messageAdapter.getCount() - 1);
+
+        messageCounter = (TextView) findViewById(R.id.conversationMessageCounter);
+
+        if(messageCount == 1){
+            messageCounter.setText(Integer.toString(messageCount) + " message");
+        } else {
+            messageCounter.setText(Integer.toString(messageCount) + " messages");
+        }
     }
 
     @Override
@@ -155,5 +187,112 @@ public class ConversationActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStop() {
+        if(wifiBound){
+            unbindService(serviceConnection);
+            wifiBound = false;
+        }
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.d(TAG, "Binding to service.");
+
+        Intent i = new Intent(this, WifiPeerService.class);
+        i.putExtra("name", "PeerActivity: " + hashCode());
+        bindService(i, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            WifiPeerService.WifiPeerServiceBinder binder = (WifiPeerService.WifiPeerServiceBinder) service;
+            wifiPeerService = binder.getService();
+            wifiPeerService.setActivity(ConversationActivity.this);
+            Log.d(TAG, "Bound to service");
+            wifiBound = true;
+            connectToPeer();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {wifiBound = false;
+        }
+    };
+
+    private void connectToPeer() {
+        WifiP2pDevice device = currentPeer.getWifiP2pDevice();
+        if(device!=null){
+            Log.d(TAG, "Trying to connect to peer.");
+            wifiPeerService.connect(device);
+        }
+    }
+
+    @Override
+    public void wifiStateChanged(boolean state) {
+        if(!state){
+            Toast.makeText(this, "Make sure your WiFi is enabled.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void handlePeers(HashMap<String, Peer> peers) {
+        //Do nothing.
+    }
+
+    @Override
+    public String getPeerName() {
+        return peerName;
+    }
+
+    @Override
+    public void connectedTo(WifiP2pDevice p) {
+        Log.d(TAG, "Connected with: " + p.deviceName);
+        if(p.equals(currentPeer.getWifiP2pDevice())){
+            Toast.makeText(this, "Connected with " + currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void setConnectionManager(ConnectionManager obj) {
+        this.conMan = obj;
+    }
+
+    @Override
+    public void receiveMessage(String readMessage) {
+        Log.d(TAG, "Received: " + readMessage);
+    }
+
+    private List<ChatMessage> fetchMessages(Cursor c){
+        List<ChatMessage> messages = new ArrayList<>();
+
+        c.moveToFirst();
+        while(!c.isAfterLast()){
+            ChatMessage cm = new ChatMessage();
+
+            if(c.getInt(c.getColumnIndex("isSender"))==1){
+                cm.isSender(true);
+            } else {
+                cm.isSender(false);
+            }
+
+            cm.setMessage(c.getString(c.getColumnIndex("message")));
+            cm.setPeerPublicKey(c.getString(c.getColumnIndex("publicKey")));
+            cm.setDate(c.getString(c.getColumnIndex("timestamp")));
+
+            messages.add(cm);
+
+            c.moveToNext();
+        }
+
+        return messages;
     }
 }

@@ -4,6 +4,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
@@ -19,8 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
+import alexkotsc.wyred.peer.ConnectionManager;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
 import alexkotsc.wyred.peer.WifiPeerService;
@@ -63,7 +65,13 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
                 Peer peer = listData.get(listHeaders.get(groupPosition)).get(childPosition);
 
                 Intent i = new Intent(PeerActivity.this, ConversationActivity.class);
+
                 i.putExtra("peer", peer);
+                i.putExtra("peername", peerName);
+
+                if(i.getParcelableExtra("peer")==null){
+                    Log.d(TAG, "Couldn't add peer to intent.. ");
+                }
                 startActivity(i);
                 return true;
             }
@@ -76,17 +84,6 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         listHeaders.add("Unavailable");
 
         listData = new HashMap<>();
-
-        //List<Peer> availablePeers = new ArrayList<>();
-        /*availablePeers.add(new Peer());
-        availablePeers.add(new Peer());
-        availablePeers.add(new Peer());*/
-
-        //List<Peer> unavailablePeers = new ArrayList<>();
-        /*unavailablePeers.add(new Peer());
-        unavailablePeers.add(new Peer());
-        unavailablePeers.add(new Peer());
-        unavailablePeers.add(new Peer());*/
 
         listData.put(listHeaders.get(0), availablePeers);
         listData.put(listHeaders.get(1), unavailablePeers);
@@ -126,7 +123,8 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     protected void onStart() {
         super.onStart();
 
-        peerName = String.valueOf(hashCode());
+        SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+        peerName = sharedPreferences.getString("screenname", "notfound");
 
         Log.d(TAG, "Binding to service.");
 
@@ -194,6 +192,21 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     @Override
     public String getPeerName() {
         return String.valueOf(hashCode());
+    }
+
+    @Override
+    public void connectedTo(WifiP2pDevice p) {
+
+    }
+
+    @Override
+    public void setConnectionManager(ConnectionManager obj) {
+
+    }
+
+    @Override
+    public void receiveMessage(String readMessage) {
+        Log.d(TAG, "Received: " + readMessage);
     }
 
     private void updateAdapter() {

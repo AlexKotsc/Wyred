@@ -2,6 +2,9 @@ package alexkotsc.wyred;
 
 import android.content.ContentValues;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * Created by AlexKotsc on 08-05-2015.
  */
@@ -67,5 +70,34 @@ public class ChatMessage {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public String toJSON(){
+        JSONObject jsonObject = new JSONObject();
+
+        try {
+            jsonObject.put("sender", String.valueOf(sender));
+            jsonObject.put("message", message);
+            jsonObject.put("timestamp", date);
+            jsonObject.put("publicKey", peerPublicKey);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject.toString();
+    }
+
+    public static final ChatMessage fromJSON(JSONObject msg){
+        ChatMessage cm = new ChatMessage();
+
+        try {
+            cm.setDate(msg.getString("timestamp"));
+            cm.setMessage(msg.getString("message"));
+            cm.setPeerPublicKey(msg.getString("publicKey"));
+            cm.isSender(Boolean.parseBoolean(msg.getString("sender")));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return cm;
     }
 }

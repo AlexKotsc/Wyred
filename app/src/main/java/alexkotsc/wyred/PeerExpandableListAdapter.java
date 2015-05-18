@@ -88,7 +88,7 @@ public class PeerExpandableListAdapter extends BaseExpandableListAdapter {
         Peer peer = (Peer) getChild(groupPosition, childPosition);
 
         TextView listItemTextView = (TextView) view.findViewById(R.id.list_item_textview);
-        listItemTextView.setText(peer.getPeerName());
+        listItemTextView.setText(peer.getPeerName() + peer.getWifiP2pDevice().status);
 
         return view;
     }

@@ -1,5 +1,7 @@
 package alexkotsc.wyred.peer;
 
+import android.net.wifi.p2p.WifiP2pDevice;
+
 import java.util.HashMap;
 
 /**
@@ -12,4 +14,9 @@ public interface IPeerActivity {
 
     public String getPeerName();
 
+    public void connectedTo(WifiP2pDevice p);
+
+    void setConnectionManager(ConnectionManager obj);
+
+    void receiveMessage(String readMessage);
 }

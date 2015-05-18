@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.NetworkInfo;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -15,28 +16,28 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import alexkotsc.wyred.ChatMessage;
 import alexkotsc.wyred.LoginActivity;
+import alexkotsc.wyred.db.WyredOpenHelper;
 
 /**
  * Created by AlexKotsc on 22-04-2015.
  */
-public class WifiPeerService extends Service {
+public class WifiPeerService extends Service implements WifiP2pManager.ConnectionInfoListener, Handler.Callback {
 
     private final IBinder binder = new WifiPeerServiceBinder();
     private HashMap<String, Peer> peers = new HashMap<>();
@@ -66,6 +67,11 @@ public class WifiPeerService extends Service {
     private HashMap<String, Peer> visiblePeers;
 
     private String screenName;
+    private WifiP2pDnsSdServiceRequest serviceRequest;
+
+    private Handler handler = new Handler(this);
+
+    private WyredOpenHelper wyredOpenHelper;
 
     public void clearGroups() {
         //Use reflection if it's possible to clear groups.
@@ -84,6 +90,83 @@ public class WifiPeerService extends Service {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void onConnectionInfoAvailable(WifiP2pInfo info) {
+
+        Thread handler = null;
+
+        if(info.groupFormed){
+            Log.d(TAG, "Group was formed.");
+            final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
+
+            if(info.isGroupOwner){
+                Log.d(TAG, "Group owner");
+                try {
+                    handler = new GroupSocketHandler(this.getHandler());
+                    handler.start();
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to create server thread - " + e.getMessage());
+                    return;
+                }
+
+            } else {
+                Log.d(TAG, "Group participant, owner: " + groupOwnerAddress);
+                try {
+                    handler = new ClientSocketHandler(this.getHandler(), info.groupOwnerAddress);
+                    handler.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+    }
+
+    private Handler getHandler() {
+        return handler;
+    }
+
+    public void sendMessage(ChatMessage chatMessage) {
+        Log.d(TAG, "Sending message: " + chatMessage.getDate());
+    }
+
+    @Override
+    public boolean handleMessage(Message msg) {
+        switch (msg.what){
+            case 666:
+                Object obj = msg.obj;
+                activity.setConnectionManager((ConnectionManager) obj);
+                break;
+            case 665:
+                byte[] readBuf = (byte[]) msg.obj;
+                String readMessage = new String(readBuf, 0 , msg.arg1);
+
+                ChatMessage c = new ChatMessage();
+
+                try {
+                    JSONObject receivedMessage = new JSONObject(readMessage);
+
+                    c = ChatMessage.fromJSON(receivedMessage);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                SQLiteDatabase db = wyredOpenHelper.getWritableDatabase();
+
+                long rowID = db.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, c.generateInsertValues());
+
+                db.close();
+
+                Log.d(TAG, "Received message stored: " + rowID);
+                activity.receiveMessage(readMessage);
+
+        }
+
+        return true;
     }
 
 
@@ -126,6 +209,7 @@ public class WifiPeerService extends Service {
         SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
         screenName = sharedPreferences.getString("screenname", "notfound");
 
+
         mReceiver = new mReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
@@ -142,7 +226,9 @@ public class WifiPeerService extends Service {
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
 
-        //startServiceRegistration();
+        wyredOpenHelper = new WyredOpenHelper(this);
+
+        startServiceRegistration();
     }
 
     @Override
@@ -152,6 +238,22 @@ public class WifiPeerService extends Service {
         } catch (IllegalArgumentException e) {
 
         }
+
+        if(mManager != null && mChannel != null){
+            mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.e(TAG, "Couldn't remove group on destroy: " + reason);
+                }
+            });
+        }
+
+        wyredOpenHelper.close();
+
         super.onDestroy();
     }
 
@@ -168,75 +270,31 @@ public class WifiPeerService extends Service {
 
     private void connectionChanged(NetworkInfo ni) {
 
+        Log.d(TAG, "Connection changed called.");
+
         if(mManager == null){
+            Log.e(TAG, "Manager not initialized.");
             return;
         }
 
         if(ni.isConnected()){
+            Log.d(TAG, "Sending request for Connection Info");
             mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
                 @Override
                 public void onConnectionInfoAvailable(WifiP2pInfo info) {
+                    Log.d(TAG, "Connection info available!");
+                    if(info.groupFormed){
+                        Log.d(TAG, "Group was formed.");
+                        final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
 
-                    if (currentlyConnectedTo != null) {
-                        Toast.makeText(WifiPeerService.this, "Connected to " + currentlyConnectedTo.deviceName, Toast.LENGTH_SHORT).show();
-                    }
-                    final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
+                        if(info.isGroupOwner){
+                            Log.d(TAG, "Group owner");
 
-                    if (info.groupFormed && info.isGroupOwner) {
-                        Toast.makeText(WifiPeerService.this, "I'm group owner!", Toast.LENGTH_SHORT).show();
 
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    ServerSocket serverSocket = new ServerSocket(8080);
-                                    Socket socketClient = null;
+                        } else {
+                            Log.d(TAG, "Group participant, owner: " + groupOwnerAddress);
 
-                                    while (true) {
-                                        socketClient = serverSocket.accept();
-
-                                        ServerAsyncTask serverAsyncTask = new ServerAsyncTask();
-                                        serverAsyncTask.execute(new Socket[]{socketClient});
-                                        Log.d(TAG, "Connected with client");
-
-                                    }
-                                } catch (Exception e) {
-                                    Log.e(TAG, "FAILED to establish connection with client: " + e.getMessage());
-                                }
-                            }
-                        }).start();
-
-                        Log.d(TAG, "ServerSocket thread started!");
-
-                    } else if (info.groupFormed) {
-                        Toast.makeText(WifiPeerService.this, "I have joined the group!", Toast.LENGTH_SHORT).show();
-                        new Thread(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                try {
-                                    Thread.sleep(1000);
-                                    Socket socket = new Socket(InetAddress.getByName(groupOwnerAddress), 8080);
-
-                                    String result = null;
-
-                                    while (socket.isConnected()) {
-                                        InputStream is = socket.getInputStream();
-
-                                        PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
-
-                                        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-                                        result = br.readLine();
-
-                                        pw.write(result + ", well hello back!");
-                                        Log.d(TAG, "Connected with server: " + result);
-                                    }
-                                } catch (Exception e) {
-                                    Log.e(TAG, "FAILED to communicate with server: " + e.getMessage());
-                                }
-                            }
-                        }).start();
+                        }
                     }
                 }
             });
@@ -256,50 +314,35 @@ public class WifiPeerService extends Service {
         if(visiblePeers!=null){
             activity.handlePeers(visiblePeers);
         }
-        /*
-        if(mManager != null){
-            if(activity!=null){
-                activity.handlePeers(visiblePeers);
-            }
-        }*/
     }
 
     private void startServiceRegistration(){
-        if(!serviceStarted){
+        Map record = new HashMap();
 
-            Map record = new HashMap();
+        Log.d(TAG, "starting service registration");
 
-            Log.d(TAG, "starting service registration");
 
-            if(thisDevice==null){
-                record.put("name", "unknown");
-            } else {
-                //record.put("name", "WYRED-" + thisDevice.deviceName);
-                record.put("name", screenName);
-                Log.d(TAG, (String) record.get("name"));
+        record.put("name", screenName);
+        record.put("publicKey", screenName);
+        record.put("available", "visible");
+        record.put("wyred","enabled");
+
+        WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance(INSTANCE_NAME, REG_TYPE, record);
+
+        mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+
             }
-            record.put("publicKey", "test1234test");
 
-            record.put("available", "visible");
-            record.put("wyred","enabled");
+            @Override
+            public void onFailure(int reason) {
+                Log.e(TAG, "Local service could not be started: " + reason);
+            }
+        });
 
-            WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance(INSTANCE_NAME, REG_TYPE, record);
-
-            mManager.addLocalService(mChannel, serviceInfo, new WifiP2pManager.ActionListener() {
-
-                @Override
-                public void onSuccess() {
-
-                }
-
-                @Override
-                public void onFailure(int reason) {
-                    Log.e(TAG, "Local service could not be started: " + reason);
-                }
-            });
-
-            discoverServices();
-        }
+        discoverServices();
     }
 
     @Override
@@ -316,17 +359,13 @@ public class WifiPeerService extends Service {
     }
 
     public void discoverServices() {
-
-        SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
-        Toast.makeText(this, sharedPreferences.getString("screenname", "Screenname not found"), Toast.LENGTH_SHORT).show();
-
         visiblePeers.clear();
 
         mManager.setDnsSdResponseListeners(mChannel, new WifiP2pManager.DnsSdServiceResponseListener() {
             @Override
             public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice srcDevice) {
                 if (instanceName.equals(INSTANCE_NAME)) {
-                    Log.d(TAG, "onDnsSdService: " + srcDevice.hashCode());
+                    //Log.d(TAG, "onDnsSdService: " + srcDevice.hashCode());
                 }
             }
         }, new WifiP2pManager.DnsSdTxtRecordListener() {
@@ -345,7 +384,7 @@ public class WifiPeerService extends Service {
             }
         });
 
-        WifiP2pDnsSdServiceRequest serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
+        serviceRequest = WifiP2pDnsSdServiceRequest.newInstance();
 
         mManager.addServiceRequest(mChannel, serviceRequest, new WifiP2pManager.ActionListener() {
             @Override
@@ -367,6 +406,11 @@ public class WifiPeerService extends Service {
 
             @Override
             public void onFailure(int reason) {
+
+                Log.e(TAG, "Failed to discover services.");
+
+            /*
+
                 Log.e(TAG, "FAILED to discover services: " + reason);
                 changeState(false);
 
@@ -397,7 +441,7 @@ public class WifiPeerService extends Service {
                             Log.d(TAG, "FAILED to stop discovery");
                         }
                     });
-                }
+                }*/
             }
         });
     }
@@ -412,15 +456,30 @@ public class WifiPeerService extends Service {
         config.deviceAddress = clickedPeer.deviceAddress;
         config.wps.setup = WpsInfo.PBC;
 
+        if(serviceRequest!=null){
+            mManager.removeServiceRequest(mChannel, serviceRequest, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.e(TAG, "Failed to remove service request: " + reason);
+                }
+            });
+        }
+
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                currentlyConnectedTo = clickedPeer;
+                //Log.d(TAG, "Succesfully sent connect to framework. Waiting for connection info...");
+                //currentlyConnectedTo = clickedPeer;
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(WifiPeerService.this, "Connection failed: " + reason + ", retry.", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Connecting to peer failed: " + reason);
             }
         });
     }
@@ -447,15 +506,21 @@ public class WifiPeerService extends Service {
                 } else {
                     changeState(false);
                 }
-            } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
-                requestPeers();
             } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
-                connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
+
+                NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+
+                if(networkInfo.isConnected()) {
+                    Log.d(TAG, "Requesting connection info...");
+                    mManager.requestConnectionInfo(mChannel, WifiPeerService.this);
+                }
+
+                //connectionChanged((NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO));
             } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
-                WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
-                thisDevice = device;
-                Log.d(TAG, "local device set! " + thisDevice.deviceName);
-                startServiceRegistration();
+
+                thisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+                Log.d(TAG, "Device status: " + thisDevice.status);
+                //startServiceRegistration();
             }
         }
     }

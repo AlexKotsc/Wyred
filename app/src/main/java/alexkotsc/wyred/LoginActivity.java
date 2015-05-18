@@ -76,8 +76,11 @@ public class LoginActivity extends ActionBarActivity {
     private void submitLogin() {
         SQLiteDatabase sqlRead = dbHelper.getReadableDatabase();
 
+        String user = "a";//username.getText().toString();
+        String pass = "a";//password.getText().toString();
+
         String selection = "username = ? AND password = ?";
-        String[] selectionArgs = new String[]{password.getText().toString(),username.getText().toString()};
+        String[] selectionArgs = new String[]{pass,user};
 
 
         Cursor c = sqlRead.query(WyredOpenHelper.TABLE_NAME_USERS, null, selection,
@@ -93,8 +96,8 @@ public class LoginActivity extends ActionBarActivity {
             Toast.makeText(this, "Login succesful!", Toast.LENGTH_LONG).show();
 
             SharedPreferences.Editor prefEditor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
-            prefEditor.putString("username", username.getText().toString());
-            prefEditor.putString("password", password.getText().toString());
+            prefEditor.putString("username", user);
+            prefEditor.putString("password", pass);
             prefEditor.putString("screenname", c.getString(3));
             prefEditor.commit();
 

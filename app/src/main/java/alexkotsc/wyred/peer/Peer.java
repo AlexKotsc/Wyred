@@ -11,7 +11,7 @@ public class Peer implements IPeer, Parcelable {
 
     private String peerName = null;
     private String publicKey = null;
-    private WifiP2pDevice wifiP2pDevice = null;
+    private WifiP2pDevice wifiP2pDevice;
 
     public Peer(){
         peerName = "testPeer";
@@ -65,19 +65,19 @@ public class Peer implements IPeer, Parcelable {
     protected Peer(Parcel in) {
         peerName = in.readString();
         publicKey = in.readString();
-        wifiP2pDevice = (WifiP2pDevice) in.readValue(WifiP2pDevice.class.getClassLoader());
+        wifiP2pDevice = in.readParcelable(WifiP2pDevice.class.getClassLoader());
     }
 
     @Override
     public int describeContents() {
-        return 0;
+        return this.hashCode();
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(peerName);
         dest.writeString(publicKey);
-        dest.writeValue(wifiP2pDevice);
+        dest.writeParcelable(wifiP2pDevice, flags);
     }
 
     @SuppressWarnings("unused")

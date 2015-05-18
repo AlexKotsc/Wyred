@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import alexkotsc.wyred.peer.ConnectionManager;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
 import alexkotsc.wyred.peer.WifiPeerService;
@@ -210,5 +211,20 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
     @Override
     public String getPeerName() {
         return String.valueOf(hashCode());
+    }
+
+    @Override
+    public void connectedTo(WifiP2pDevice p) {
+
+    }
+
+    @Override
+    public void setConnectionManager(ConnectionManager obj) {
+
+    }
+
+    @Override
+    public void receiveMessage(String readMessage) {
+
     }
 }
