@@ -36,7 +36,7 @@ public class MessageAdapter extends ArrayAdapter<ChatMessage> {
         if(currentMessage.isSender()){
             view = layoutInflater.inflate(R.layout.message_sender_view, null);
         } else {
-            view = layoutInflater.inflate(R.layout.message_recipient_view, null);
+            view = layoutInflater.inflate(R.layout.message_receiver_view, null);
         }
 
         TextView messageText = (TextView) view.findViewById(R.id.messageTextView);

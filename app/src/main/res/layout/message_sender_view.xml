@@ -2,23 +2,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="right"
+    android:paddingRight="10dp"
     android:paddingTop="10dp"
-    android:paddingLeft="10dp"
     android:paddingBottom="10dp">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#999"
-        android:padding="10dp">
+        android:background="#CCC"
+        android:padding="10dp"
+        android:gravity="right">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/messageTextView" />
+            android:id="@+id/messageTextView"
+            android:focusable="false" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -27,4 +30,5 @@
             android:text="Small Text"
             android:id="@+id/messageTimeView" />
     </LinearLayout>
+
 </LinearLayout>
