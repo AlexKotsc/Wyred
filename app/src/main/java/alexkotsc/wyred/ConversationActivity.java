@@ -269,6 +269,7 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
     @Override
     public void receiveMessage(String readMessage) {
         Log.d(TAG, "Received: " + readMessage);
+        updateMessages();
     }
 
     private List<ChatMessage> fetchMessages(Cursor c){

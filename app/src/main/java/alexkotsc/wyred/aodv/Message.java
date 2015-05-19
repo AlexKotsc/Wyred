@@ -5,12 +5,12 @@ package alexkotsc.wyred.aodv;
  */
 public interface Message {
 
-    public Flag[] getFlags();
-    public void setFlags(Flag[] flags);
-    public int getHopCount();
-    public int getID();
-    public String getDestinationAddress();
-    public int getDestinationSeq();
-    public String getOriginatorAddress();
-    public int getOriginatorSeq();
+    Flag[] getFlags();
+    void setFlags(Flag[] flags);
+    int getHopCount();
+    int getID();
+    String getDestinationAddress();
+    int getDestinationSeq();
+    String getOriginatorAddress();
+    int getOriginatorSeq();
 }

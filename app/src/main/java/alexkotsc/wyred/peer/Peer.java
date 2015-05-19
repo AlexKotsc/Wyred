@@ -48,8 +48,7 @@ public class Peer implements IPeer, Parcelable {
 
     public boolean isConnected(){
         if(wifiP2pDevice.status!=WifiP2pDevice.CONNECTED) return false;
-        if(publicKey==null) return false;
-        return true;
+        return publicKey != null;
     }
 
     @Override
@@ -98,10 +97,6 @@ public class Peer implements IPeer, Parcelable {
 
         Peer otherPeer = (Peer) o;
 
-        if(getDeviceName().equals(otherPeer.getDeviceName())){
-            return true;
-        } else {
-            return false;
-        }
+        return getDeviceName().equals(otherPeer.getDeviceName());
     }
 }

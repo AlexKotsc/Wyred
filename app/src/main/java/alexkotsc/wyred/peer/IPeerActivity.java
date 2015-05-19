@@ -8,13 +8,13 @@ import java.util.HashMap;
  * Created by AlexKotsc on 11-05-2015.
  */
 public interface IPeerActivity {
-    public void wifiStateChanged(boolean state);
+    void wifiStateChanged(boolean state);
 
-    public void handlePeers(HashMap<String,Peer> peers);
+    void handlePeers(HashMap<String, Peer> peers);
 
-    public String getPeerName();
+    String getPeerName();
 
-    public void connectedTo(WifiP2pDevice p);
+    void connectedTo(WifiP2pDevice p);
 
     void setConnectionManager(ConnectionManager obj);
 
