@@ -1,7 +1,8 @@
 package alexkotsc.wyred;
 
-import android.util.Log;
 import android.view.View;
+
+import alexkotsc.wyred.activities.WifiP2P;
 
 /**
  * Created by AlexKotsc on 15-04-2015.

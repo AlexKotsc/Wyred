@@ -1,4 +1,4 @@
-package alexkotsc.wyred.peer;
+package alexkotsc.wyred.peer.conn;
 
 import android.os.Handler;
 import android.util.Log;

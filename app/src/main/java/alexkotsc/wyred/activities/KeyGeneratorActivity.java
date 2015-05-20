@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -22,6 +22,8 @@ import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+
+import alexkotsc.wyred.R;
 
 
 public class KeyGeneratorActivity extends ActionBarActivity {

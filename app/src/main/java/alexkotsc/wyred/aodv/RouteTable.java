@@ -22,21 +22,23 @@ public class RouteTable {
 
             RouteEntry currentEntry = entries.get(newEntry.getDestKey());
 
-            if(newEntry.getDestSeq())
+            if(newEntry.getDestSeq()!=0){
 
-            if(e.getDestSeq()<1){
-                entries.put(e.getDestKey(), e);
+            }
+
+            if(newEntry.getDestSeq()<1){
+                entries.put(newEntry.getDestKey(), newEntry);
                 return;
             }
 
-            if(e.getDestSeq() > currentEntry.getDestSeq()){
-                entries.put(e.getDestKey(), e);
+            if(newEntry.getDestSeq() > currentEntry.getDestSeq()){
+                entries.put(newEntry.getDestKey(), newEntry);
                 return;
             }
 
         } else {
             //New entry
-            entries.put(e.getDestKey(),e);
+            entries.put(newEntry.getDestKey(), newEntry);
         }
     }
 

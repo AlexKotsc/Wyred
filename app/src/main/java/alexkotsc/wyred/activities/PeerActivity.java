@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -22,10 +22,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import alexkotsc.wyred.peer.ConnectionManager;
+import alexkotsc.wyred.peer.PeerExpandableListAdapter;
+import alexkotsc.wyred.R;
+import alexkotsc.wyred.peer.conn.ConnectionManager;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
-import alexkotsc.wyred.peer.WifiPeerService;
+import alexkotsc.wyred.peer.conn.WifiPeerService;
 
 
 public class PeerActivity extends ActionBarActivity implements IPeerActivity {
@@ -44,7 +46,8 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     List<Peer> availablePeers;
     List<Peer> unavailablePeers;
 
-    String peerName;
+    String screenName;
+    ConnectionManager connectionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +70,8 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
                 Intent i = new Intent(PeerActivity.this, ConversationActivity.class);
 
                 i.putExtra("peer", peer);
-                i.putExtra("peername", peerName);
+                i.putExtra("peername", screenName);
+                i.putExtra("connected", true);
 
                 if(i.getParcelableExtra("peer")==null){
                     Log.d(TAG, "Couldn't add peer to intent.. ");
@@ -115,7 +119,6 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
             unbindService(serviceConnection);
             wifiBound = false;
         }
-
         super.onStop();
     }
 
@@ -124,7 +127,7 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
         super.onStart();
 
         SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
-        peerName = sharedPreferences.getString("screenname", "notfound");
+        screenName = sharedPreferences.getString("screenname", "notfound");
 
         Log.d(TAG, "Binding to service.");
 
@@ -201,7 +204,7 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
 
     @Override
     public void setConnectionManager(ConnectionManager obj) {
-
+        this.connectionManager = obj;
     }
 
     @Override

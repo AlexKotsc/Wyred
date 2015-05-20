@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import alexkotsc.wyred.R;
 import alexkotsc.wyred.db.WyredOpenHelper;
 
 

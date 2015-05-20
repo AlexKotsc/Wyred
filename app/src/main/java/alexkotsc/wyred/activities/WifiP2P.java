@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -16,16 +16,18 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import alexkotsc.wyred.peer.ConnectionManager;
+import alexkotsc.wyred.R;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
-import alexkotsc.wyred.peer.WifiPeerService;
+import alexkotsc.wyred.peer.PeerListAdapter;
+import alexkotsc.wyred.peer.conn.ConnectionManager;
+import alexkotsc.wyred.peer.conn.WifiPeerService;
+import alexkotsc.wyred.searchBtnOnClickListener;
 
 
 public class WifiP2P extends ActionBarActivity implements IPeerActivity {
@@ -58,7 +60,7 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
         searchBtn.setOnClickListener(new searchBtnOnClickListener(this));
 
         Button clearGroupsBtn = (Button) findViewById(R.id.button);
-        clearGroupsBtn.setOnClickListener(new View.OnClickListener() {
+        /*clearGroupsBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(wifiPeerService!=null){
@@ -67,7 +69,7 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
                     Toast.makeText(WifiP2P.this, "Not yet connected to service.", Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        });*/
 
         ListView lw = (ListView) findViewById(R.id.listView);
         lw.setEmptyView(findViewById(R.id.emptylist));

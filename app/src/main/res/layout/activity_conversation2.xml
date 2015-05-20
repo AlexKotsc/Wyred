@@ -37,8 +37,8 @@
             android:layout_alignParentLeft="false" />
 
         <ImageButton
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:id="@+id/conversationBackBtn"
             android:layout_centerVertical="true"
             android:layout_alignParentLeft="true"
@@ -63,6 +63,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/conversationMessageList"
+        android:transcriptMode="alwaysScroll"
         android:layout_gravity="center_horizontal"
         android:layout_centerHorizontal="true"
         android:layout_above="@+id/conversationSpacer2"

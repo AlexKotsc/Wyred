@@ -1,14 +1,16 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.peer;
 
 import android.content.ContentValues;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
+
 /**
  * Created by AlexKotsc on 08-05-2015.
  */
-public class ChatMessage {
+public class ChatMessage implements Serializable{
 
     private boolean sender;
     private String message;
@@ -100,4 +102,6 @@ public class ChatMessage {
 
         return cm;
     }
+
+
 }

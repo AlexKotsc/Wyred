@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.peer;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,6 +8,8 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import java.util.List;
+
+import alexkotsc.wyred.R;
 
 /**
  * Created by AlexKotsc on 08-05-2015.

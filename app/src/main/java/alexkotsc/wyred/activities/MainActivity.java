@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +11,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import alexkotsc.wyred.BLEP2P;
+import alexkotsc.wyred.R;
 
 
 public class MainActivity extends ActionBarActivity {

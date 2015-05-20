@@ -5,8 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import alexkotsc.wyred.WifiP2P;
-
 /**
  * Created by AlexKotsc on 08-05-2015.
  */

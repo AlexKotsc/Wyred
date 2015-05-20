@@ -4,6 +4,8 @@ import android.net.wifi.p2p.WifiP2pDevice;
 
 import java.util.HashMap;
 
+import alexkotsc.wyred.peer.conn.ConnectionManager;
+
 /**
  * Created by AlexKotsc on 11-05-2015.
  */

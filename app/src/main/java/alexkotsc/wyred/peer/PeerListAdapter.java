@@ -1,4 +1,4 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.peer;
 
 import android.content.Context;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import alexkotsc.wyred.R;
 import alexkotsc.wyred.peer.Peer;
 
 /**

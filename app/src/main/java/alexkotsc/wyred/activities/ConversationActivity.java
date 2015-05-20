@@ -1,5 +1,6 @@
-package alexkotsc.wyred;
+package alexkotsc.wyred.activities;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +10,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,14 +25,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import alexkotsc.wyred.R;
 import alexkotsc.wyred.db.WyredOpenHelper;
-import alexkotsc.wyred.peer.ConnectionManager;
+import alexkotsc.wyred.peer.ChatMessage;
 import alexkotsc.wyred.peer.IPeerActivity;
+import alexkotsc.wyred.peer.MessageAdapter;
 import alexkotsc.wyred.peer.Peer;
-import alexkotsc.wyred.peer.WifiPeerService;
+import alexkotsc.wyred.peer.conn.ConnectionManager;
+import alexkotsc.wyred.peer.conn.WifiPeerService;
 
 
-public class ConversationActivity extends ActionBarActivity implements IPeerActivity {
+public class ConversationActivity extends Activity implements IPeerActivity {
 
     private static final String TAG = "ConversationActivity";
     WyredOpenHelper wyredOpenHelper;
@@ -47,10 +50,12 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
     private EditText inputText;
     private ListView messageList;
     private ConnectionManager conMan;
+    private boolean connected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_conversation2);
 
         sendBtn = (Button) findViewById(R.id.conversationSendMessageButton);
@@ -78,12 +83,6 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
             Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
         }
 
-        String publicKey = null;
-
-        if((publicKey = i.getStringExtra("publicKey"))==null){
-            publicKey = "TestKey";
-        }
-
         peerName = i.getStringExtra("peername");
 
         messageList = (ListView) findViewById(R.id.conversationMessageList);
@@ -93,6 +92,8 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
 
         messagePeername = (TextView) findViewById(R.id.conversationPeerName);
         messagePeername.setText(currentPeer.getPeerName());
+
+        connected = i.getBooleanExtra("connected", false);
 
 
 
@@ -123,7 +124,10 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
             msg.isSender(!msg.isSender());
             msg.setPeerPublicKey(peerName + "pk");
 
-            conMan.write(msg.toJSON().getBytes());
+            //conMan.write(msg.toJSON().getBytes());
+            conMan.write(msg);
+        } else {
+            Log.e(TAG, "connection manager isn't set, couldn't send message.");
         }
         //wifiPeerService.sendMessage(fetchedMessages.get(0));
 
@@ -220,6 +224,9 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
             wifiPeerService.setActivity(ConversationActivity.this);
             Log.d(TAG, "Bound to service");
             wifiBound = true;
+            if(connected){
+                conMan = wifiPeerService.getConnectionManager();
+            }
             connectToPeer();
         }
 
