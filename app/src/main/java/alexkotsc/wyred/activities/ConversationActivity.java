@@ -1,6 +1,5 @@
 package alexkotsc.wyred.activities;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,7 +35,7 @@ import alexkotsc.wyred.peer.conn.ConnectionManager;
 import alexkotsc.wyred.peer.conn.WifiPeerService;
 
 
-public class ConversationActivity extends Activity implements IPeerActivity {
+public class ConversationActivity extends ActionBarActivity implements IPeerActivity {
 
     private static final String TAG = "ConversationActivity";
     WyredOpenHelper wyredOpenHelper;
@@ -81,6 +81,7 @@ public class ConversationActivity extends Activity implements IPeerActivity {
         currentPeer = i.getParcelableExtra("peer");
         if(currentPeer!=null) {
             Toast.makeText(this, currentPeer.getPeerName(), Toast.LENGTH_SHORT).show();
+            setTitle("Wyred - " + currentPeer.getPeerName());
         }
 
         peerName = i.getStringExtra("peername");
@@ -94,8 +95,6 @@ public class ConversationActivity extends Activity implements IPeerActivity {
         messagePeername.setText(currentPeer.getPeerName());
 
         connected = i.getBooleanExtra("connected", false);
-
-
 
     }
 
@@ -124,7 +123,6 @@ public class ConversationActivity extends Activity implements IPeerActivity {
             msg.isSender(!msg.isSender());
             msg.setPeerPublicKey(peerName + "pk");
 
-            //conMan.write(msg.toJSON().getBytes());
             conMan.write(msg);
         } else {
             Log.e(TAG, "connection manager isn't set, couldn't send message.");
@@ -147,7 +145,7 @@ public class ConversationActivity extends Activity implements IPeerActivity {
         wyredOpenHelper = new WyredOpenHelper(this);
 
         SQLiteDatabase database = wyredOpenHelper.getReadableDatabase();
-        Cursor results = database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?", new String[]{(currentPeer.getPublicKey()+"pk")},null,null,null,null);
+        Cursor results = database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?", new String[]{(currentPeer.getPublicKey() + "pk")}, null, null, null, null);
         //Cursor results = database.query("wyred_messages", null, "publicKey = '" +  currentPeer.getPublicKey() + "'", null, null, null, null);
 
         messageCount = results.getCount();
@@ -180,17 +178,31 @@ public class ConversationActivity extends Activity implements IPeerActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        switch (item.getItemId()){
+            case R.id.action_settings:
+                return true;
+            case R.id.action_clear:
+                deleteMessages();
+                return true;
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
+    }
 
-        return super.onOptionsItemSelected(item);
+    private void deleteMessages() {
+
+        wyredOpenHelper = new WyredOpenHelper(this);
+
+        SQLiteDatabase db = wyredOpenHelper.getWritableDatabase();
+
+        int result = db.delete(WyredOpenHelper.TABLE_NAME_MESSAGES, "publicKey = ?", new String[]{currentPeer.getPublicKey() + "pk"});
+
+        Toast.makeText(this, "Deleted " + result + " messages.", Toast.LENGTH_SHORT).show();
+
+        wyredOpenHelper.close();
+
+        updateMessages();
     }
 
     @Override
@@ -251,7 +263,7 @@ public class ConversationActivity extends Activity implements IPeerActivity {
     }
 
     @Override
-    public void handlePeers(HashMap<String, Peer> peers) {
+    public void handlePeers(HashMap<String, Peer> peers, HashMap<String, Peer> knownPeers) {
         //Do nothing.
     }
 
@@ -277,6 +289,11 @@ public class ConversationActivity extends Activity implements IPeerActivity {
     public void receiveMessage(String readMessage) {
         Log.d(TAG, "Received: " + readMessage);
         updateMessages();
+    }
+
+    @Override
+    public void updatePeerList() {
+
     }
 
     private List<ChatMessage> fetchMessages(Cursor c){

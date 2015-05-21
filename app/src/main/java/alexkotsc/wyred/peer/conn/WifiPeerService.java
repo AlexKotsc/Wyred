@@ -22,12 +22,18 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import alexkotsc.wyred.activities.LoginActivity;
+import alexkotsc.wyred.aodv.RouteEntry;
+import alexkotsc.wyred.aodv.RouteTable;
 import alexkotsc.wyred.db.WyredOpenHelper;
 import alexkotsc.wyred.peer.ChatMessage;
 import alexkotsc.wyred.peer.IPeerActivity;
@@ -39,9 +45,7 @@ import alexkotsc.wyred.peer.Peer;
 public class WifiPeerService extends Service implements WifiP2pManager.ConnectionInfoListener, Handler.Callback, WifiP2pManager.GroupInfoListener, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.DnsSdTxtRecordListener {
 
     private final IBinder binder = new WifiPeerServiceBinder();
-    private HashMap<String, Peer> peers = new HashMap<>();
     private ArrayList<WifiP2pDevice> currentPeers = new ArrayList<>();
-    private HashMap<String, WifiP2pDevice> peerMap = new HashMap<>();
     private boolean P2PEnabled = false;
     private IPeerActivity activity;
     private WifiP2pManager mManager = null;
@@ -62,6 +66,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     private final String TAG = "WifiPeerService";
 
     private HashMap<String, Peer> visiblePeers;
+    private HashMap<String, Peer> knownPeers;
 
     private String screenName;
     private WifiP2pDnsSdServiceRequest serviceRequest;
@@ -72,8 +77,9 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
     private ConnectionManager connectionManager;
 
-
     private WifiP2pGroup currentGroup;
+
+    private RouteTable routeTable;
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
@@ -81,7 +87,6 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         Thread handler;
 
         if(info.groupFormed){
-            Log.d(TAG, "Group was formed.");
             final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
 
             if(info.isGroupOwner){
@@ -91,7 +96,6 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
                     handler.start();
                 } catch (IOException e) {
                     Log.e(TAG, "Failed to create server thread - " + e.getMessage());
-                    return;
                 }
 
             } else {
@@ -140,36 +144,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         return true;
     }
 
-    @Override
-    public void onGroupInfoAvailable(WifiP2pGroup group) {
-        if(group!=null) {
-            Log.d(TAG, "Group was set: " + group.getNetworkName());
-            currentGroup = group;
-        }
-    }
 
-    @Override
-    public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice srcDevice) {
-        if (instanceName.equals(INSTANCE_NAME)) {
-            //Log.d(TAG, "onDnsSdService: " + instanceName);
-        }
-    }
-
-    @Override
-    public void onDnsSdTxtRecordAvailable(String fullDomainName, Map<String, String> txtRecordMap, WifiP2pDevice srcDevice) {
-        Log.d(TAG, "DnsSdTxtRecord: " + fullDomainName + ": " + txtRecordMap.get("wyred"));
-
-        if (txtRecordMap.get("wyred") != null) {
-            Peer peer = new Peer();
-
-            peer.setPublicKey(txtRecordMap.get("publicKey"));
-            peer.setPeerName(txtRecordMap.get("name"));
-            peer.setWifiP2pDevice(srcDevice);
-
-            visiblePeers.put(peer.getPublicKey(), peer);
-            requestPeers();
-        }
-    }
 
     public WifiPeerService(){
 
@@ -179,9 +154,55 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     public void onCreate() {
         super.onCreate();
 
-        //Log.d(TAG, "onCreate - does this even get called?!");
-        SharedPreferences sharedPreferences = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
-        screenName = sharedPreferences.getString("screenname", "notfound");
+        SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+
+        Gson gson = new Gson();
+
+        knownPeers = new HashMap<>();
+
+        //Set knownPeers from preference file if it is stored, else create new hashmap.
+        if(sp.getString("peers",null)!=null){
+            Type stringPeerMap = new TypeToken<Map<String, Peer>>(){}.getType();
+            Map<String, Peer> tempPeers = gson.fromJson(sp.getString("peers", null), stringPeerMap);
+
+            for(Map.Entry<String, Peer> entry : tempPeers.entrySet()){
+                knownPeers.put(entry.getKey(), entry.getValue());
+            }
+            Log.d(TAG, "Loaded " + knownPeers.size() + " known peers from preference file.");
+        }
+
+        visiblePeers = new HashMap<>();
+
+        Peer temp = new Peer();
+        temp.setPublicKey("testPeer123");
+        temp.setPeerName("Test!");
+        temp.setWifiP2pDevice(new WifiP2pDevice(null));
+
+        knownPeers.put(temp.getPublicKey(), temp);
+
+        //Set route table from preference file if it is stored, else create new route table.
+        if(sp.getString("routetable", null)!=null){
+            Type routeTableType = new TypeToken<RouteTable>(){}.getType();
+            routeTable = gson.fromJson(sp.getString("routetable",null), routeTableType);
+
+            Log.d(TAG, "Loaded " + routeTable.getEntryCount() + " route entries from preference file.");
+        } else {
+            routeTable = new RouteTable();
+        }
+
+        RouteEntry routeEntry = new RouteEntry();
+        routeEntry.setDestKey("destinationKey");
+        routeEntry.setDestSeq(0);
+        routeEntry.setFlags(new HashMap<String, Integer>());
+        routeEntry.setHopCount(0);
+        routeEntry.setNextHop("nextHop");
+        routeEntry.setTTL(100);
+
+        routeTable.addEntry(routeEntry);
+        Log.d(TAG, "Routetable: " + gson.toJson(routeTable));
+
+
+        screenName = sp.getString("screenname", "notfound");
 
         mReceiver = new mReceiver();
 
@@ -194,7 +215,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         registerReceiver(mReceiver, intentFilter);
 
         currentPeers = new ArrayList<>();
-        visiblePeers = new HashMap<>();
+
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
@@ -225,6 +246,14 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         }
         wyredOpenHelper.close();
 
+        SharedPreferences.Editor sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE).edit();
+
+        Gson gson = new Gson();
+
+        sp.putString("peers", gson.toJson(knownPeers));
+        sp.putString("routetable", gson.toJson(routeTable));
+        sp.commit();
+
         super.onDestroy();
     }
 
@@ -239,39 +268,6 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         return Service.START_NOT_STICKY;
     }
 
-    private void connectionChanged(NetworkInfo ni) {
-
-        Log.d(TAG, "Connection changed called.");
-
-        if(mManager == null){
-            Log.e(TAG, "Manager not initialized.");
-            return;
-        }
-
-        if(ni.isConnected()){
-            Log.d(TAG, "Sending request for Connection Info");
-            mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
-                @Override
-                public void onConnectionInfoAvailable(WifiP2pInfo info) {
-                    Log.d(TAG, "Connection info available!");
-                    if(info.groupFormed){
-                        Log.d(TAG, "Group was formed.");
-                        final String groupOwnerAddress = info.groupOwnerAddress.getHostAddress();
-
-                        if(info.isGroupOwner){
-                            Log.d(TAG, "Group owner");
-
-
-                        } else {
-                            Log.d(TAG, "Group participant, owner: " + groupOwnerAddress);
-
-                        }
-                    }
-                }
-            });
-        }
-    }
-
     private void changeState(boolean b) {
 
         P2PEnabled = b;
@@ -282,9 +278,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     }
 
     public void requestPeers() {
-        if(visiblePeers!=null){
-            activity.handlePeers(visiblePeers);
-        }
+        activity.handlePeers(visiblePeers, knownPeers);
     }
 
     public ConnectionManager getConnectionManager(){
@@ -337,6 +331,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     public void setActivity(IPeerActivity activity) {
         this.activity = activity;
         this.activity.wifiStateChanged(P2PEnabled);
+        requestPeers();
     }
 
     public void connect(final WifiP2pDevice clickedPeer) {
@@ -351,6 +346,39 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         mManager.connect(mChannel, config, new LoggingListener(TAG, "connect"));
     }
 
+    @Override
+    public void onGroupInfoAvailable(WifiP2pGroup group) {
+        if(group!=null) {
+            Log.d(TAG, "Group was set: " + group.getNetworkName());
+            currentGroup = group;
+        }
+    }
+
+    @Override
+    public void onDnsSdServiceAvailable(String instanceName, String registrationType, WifiP2pDevice srcDevice) {
+        if (instanceName.equals(INSTANCE_NAME)) {
+            //Log.d(TAG, "onDnsSdService: " + instanceName);
+        }
+    }
+
+    @Override
+    public void onDnsSdTxtRecordAvailable(String fullDomainName, Map<String, String> txtRecordMap, WifiP2pDevice srcDevice) {
+        Log.d(TAG, "DnsSdTxtRecord: " + fullDomainName + ": " + txtRecordMap.get("wyred"));
+
+        if (txtRecordMap.get("wyred") != null) {
+            Peer peer = new Peer();
+
+            peer.setPublicKey(txtRecordMap.get("publicKey"));
+            peer.setPeerName(txtRecordMap.get("name"));
+            peer.setWifiP2pDevice(srcDevice);
+
+            visiblePeers.put(peer.getPublicKey(), peer);
+            knownPeers.put(peer.getPublicKey(), peer);
+
+            requestPeers();
+        }
+    }
+
     public class WifiPeerServiceBinder extends Binder {
         public WifiPeerService getService() {
             return WifiPeerService.this;
@@ -363,6 +391,11 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
         @Override
         public void onReceive(Context context, Intent intent) {
+
+            if(activity!=null){
+                activity.updatePeerList();
+            }
+
             String action = intent.getAction();
 
             switch (action){
@@ -375,6 +408,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
                     }
                     break;
                 case WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION:
+
                     NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
                     if(networkInfo.isConnected()) {

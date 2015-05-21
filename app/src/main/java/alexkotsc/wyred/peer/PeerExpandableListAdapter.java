@@ -1,7 +1,9 @@
 package alexkotsc.wyred.peer;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import alexkotsc.wyred.R;
-import alexkotsc.wyred.peer.Peer;
 
 /**
  * Created by AlexKotsc on 11-05-2015.
@@ -89,7 +90,31 @@ public class PeerExpandableListAdapter extends BaseExpandableListAdapter {
         Peer peer = (Peer) getChild(groupPosition, childPosition);
 
         TextView listItemTextView = (TextView) view.findViewById(R.id.list_item_textview);
-        listItemTextView.setText(peer.getPeerName() + peer.getWifiP2pDevice().status);
+
+        String status = "";
+
+        switch (peer.getWifiP2pDevice().status){
+            case WifiP2pDevice.AVAILABLE:
+                listItemTextView.setTextColor(Color.BLUE);
+                status = "Available";
+                break;
+            case WifiP2pDevice.CONNECTED:
+                listItemTextView.setTextColor(Color.GREEN);
+                status = "Connected";
+                break;
+            case WifiP2pDevice.INVITED:
+                listItemTextView.setTextColor(Color.YELLOW);
+                status = "Invited";
+                break;
+            case WifiP2pDevice.UNAVAILABLE:
+                listItemTextView.setTextColor(Color.RED);
+                status = "Un-available";
+                break;
+            default:
+                listItemTextView.setTextColor(Color.BLACK);
+        }
+
+        listItemTextView.setText(peer.getPeerName() + " - " + status);
 
         return view;
     }

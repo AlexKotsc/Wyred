@@ -27,4 +27,43 @@ public class RouteEntry {
         return destSeq;
     }
 
+    public void setDestKey(String destKey) {
+        this.destKey = destKey;
+    }
+
+    public void setDestSeq(int destSeq) {
+        this.destSeq = destSeq;
+    }
+
+    public HashMap<String, Integer> getFlags() {
+        return flags;
+    }
+
+    public void setFlags(HashMap<String, Integer> flags) {
+        this.flags = flags;
+    }
+
+    public int getHopCount() {
+        return hopCount;
+    }
+
+    public void setHopCount(int hopCount) {
+        this.hopCount = hopCount;
+    }
+
+    public String getNextHop() {
+        return nextHop;
+    }
+
+    public void setNextHop(String nextHop) {
+        this.nextHop = nextHop;
+    }
+
+    public float getTTL() {
+        return TTL;
+    }
+
+    public void setTTL(float TTL) {
+        this.TTL = TTL;
+    }
 }

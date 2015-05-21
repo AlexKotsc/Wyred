@@ -12,7 +12,7 @@ import alexkotsc.wyred.peer.conn.ConnectionManager;
 public interface IPeerActivity {
     void wifiStateChanged(boolean state);
 
-    void handlePeers(HashMap<String, Peer> peers);
+    void handlePeers(HashMap<String, Peer> currentPeers, HashMap<String, Peer> knownPeers);
 
     String getPeerName();
 
@@ -21,4 +21,6 @@ public interface IPeerActivity {
     void setConnectionManager(ConnectionManager obj);
 
     void receiveMessage(String readMessage);
+
+    void updatePeerList();
 }

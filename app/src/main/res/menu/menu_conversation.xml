@@ -4,4 +4,12 @@
     tools:context="alexkotsc.wyred.activities.ConversationActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
+    <item
+        android:id="@+id/action_clear"
+        android:title="Clear conversation"
+        android:icon="@drawable/ic_menu_end_conversation"
+        android:orderInCategory="1"
+        app:showAsAction="ifRoom"
+        />
+
 </menu>

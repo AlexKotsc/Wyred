@@ -63,17 +63,9 @@ public class ConnectionManager implements Runnable {
                         Log.d(TAG, "Received: " + cm.getPeerPublicKey());
                     }
 
-                    /*bytes = inputStream.read(buffer);
-
-                    if (bytes == -1) {
-                        break;
-                    }*/
-
-                    //Log.d(TAG, "Received: " + String.valueOf(buffer));
-
-                    //handler.obtainMessage(ChatMessageBuffer, bytes, -1, buffer).sendToTarget();
                 } catch (IOException e){
                     Log.e(TAG, "Disconnected", e);
+                    return;
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }

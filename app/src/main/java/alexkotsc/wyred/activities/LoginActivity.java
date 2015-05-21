@@ -66,6 +66,17 @@ public class LoginActivity extends ActionBarActivity {
         username = (EditText) findViewById(R.id.loginUserText);
 
         password = (EditText) findViewById(R.id.loginPasswordText);
+
+        SharedPreferences sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+
+
+        if(sharedPreferences.getString("username",null)!=null){
+            if(checkLogin(sharedPreferences.getString("username", ""), sharedPreferences.getString("password", ""))!=null){
+                Toast.makeText(this, "Logged in as " + sharedPreferences.getString("screenname", "unknown"), Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(this, PeerActivity.class);
+                startActivity(i);
+            }
+        }
     }
 
     private void clearFields() {
@@ -75,45 +86,47 @@ public class LoginActivity extends ActionBarActivity {
     }
 
     private void submitLogin() {
-        SQLiteDatabase sqlRead = dbHelper.getReadableDatabase();
 
-        String user = "a";//username.getText().toString();
-        String pass = "a";//password.getText().toString();
+        String user = username.getText().toString();
+        String pass = password.getText().toString();
 
-        String selection = "username = ? AND password = ?";
-        String[] selectionArgs = new String[]{pass,user};
+        user = "a";
+        pass = "a";
 
+        String screenName = checkLogin(user, pass);
 
-        Cursor c = sqlRead.query(WyredOpenHelper.TABLE_NAME_USERS, null, selection,
-                selectionArgs, null, null, null);
+        if(screenName!=null){
 
-        c.moveToFirst();
-
-        if(c.getCount()==1){
-            //Set shared preferences.
-
-            Toast.makeText(this, c.getString(c.getColumnIndex("screenname")), Toast.LENGTH_SHORT).show();
-
-            Toast.makeText(this, "Login succesful!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Login succesful.", Toast.LENGTH_SHORT).show();
 
             SharedPreferences.Editor prefEditor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
             prefEditor.putString("username", user);
             prefEditor.putString("password", pass);
-            prefEditor.putString("screenname", c.getString(3));
+            prefEditor.putString("screenname", screenName);
             prefEditor.commit();
 
             Intent i = new Intent(this, PeerActivity.class);
-
             startActivity(i);
-
-            sqlRead.close();
-            return;
         } else {
             Toast.makeText(this, "Login failed, please try again.", Toast.LENGTH_LONG).show();
             password.getText().clear();
         }
+    }
 
-        sqlRead.close();
+    private String checkLogin(String username, String password){
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        Cursor result = db.query(WyredOpenHelper.TABLE_NAME_USERS, null, "username = ? AND password = ?", new String[]{password, username},null, null, null);
+
+        result.moveToFirst();
+        if(result.getCount()==1){
+
+            db.close();
+
+            return result.getString(3);
+        }
+
+        return null;
     }
 
     @Override

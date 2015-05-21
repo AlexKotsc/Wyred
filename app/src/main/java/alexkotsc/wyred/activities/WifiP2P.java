@@ -206,7 +206,7 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
     }
 
     @Override
-    public void handlePeers(HashMap<String, Peer> peers) {
+    public void handlePeers(HashMap<String, Peer> peers, HashMap<String, Peer> knownPeers) {
         receivePeers(peers);
     }
 
@@ -227,6 +227,11 @@ public class WifiP2P extends ActionBarActivity implements IPeerActivity {
 
     @Override
     public void receiveMessage(String readMessage) {
+
+    }
+
+    @Override
+    public void updatePeerList() {
 
     }
 }

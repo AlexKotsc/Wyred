@@ -16,17 +16,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 
-import alexkotsc.wyred.peer.PeerExpandableListAdapter;
 import alexkotsc.wyred.R;
-import alexkotsc.wyred.peer.conn.ConnectionManager;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
+import alexkotsc.wyred.peer.PeerExpandableListAdapter;
+import alexkotsc.wyred.peer.conn.ConnectionManager;
 import alexkotsc.wyred.peer.conn.WifiPeerService;
 
 
@@ -108,9 +108,29 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
             case R.id.action_search:
                 wifiPeerService.discoverServices();
                 return true;
+            case R.id.action_logout:
+                logout();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void logout() {
+
+        SharedPreferences.Editor sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE).edit();
+
+        sp.remove("username");
+        sp.remove("password");
+        sp.remove("screenname");
+
+        sp.commit();
+
+        Toast.makeText(this, "Logged out.", Toast.LENGTH_SHORT).show();
+
+        finish();
+
+
     }
 
     @Override
@@ -159,8 +179,22 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     }
 
     @Override
-    public void handlePeers(HashMap<String, Peer> peers) {
+    public void handlePeers(HashMap<String, Peer> currentPeers, HashMap<String, Peer> knownPeers) {
         Log.d(TAG, "Received current peers from service.");
+
+        availablePeers.clear();
+        unavailablePeers.clear();
+
+        for(Peer p : currentPeers.values()){
+            availablePeers.add(p);
+        }
+
+        for(Peer p : knownPeers.values()){
+            if(!currentPeers.containsKey(p.getPublicKey())){
+                unavailablePeers.add(p);
+            }
+        }
+        /*
 
         for(Peer p : peers.values()){
             if(!availablePeers.contains(p)){
@@ -187,7 +221,7 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
             if(availablePeers.contains(peer)){
                 unavailableIterator.remove();
             }
-        }
+        }*/
 
         updateAdapter();
     }
@@ -210,6 +244,11 @@ public class PeerActivity extends ActionBarActivity implements IPeerActivity {
     @Override
     public void receiveMessage(String readMessage) {
         Log.d(TAG, "Received: " + readMessage);
+    }
+
+    @Override
+    public void updatePeerList() {
+        updateAdapter();
     }
 
     private void updateAdapter() {

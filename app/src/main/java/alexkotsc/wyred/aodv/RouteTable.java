@@ -56,6 +56,10 @@ public class RouteTable {
         }
     }
 
+    public int getEntryCount(){
+        return entries.size();
+    }
+
 
 
 }
