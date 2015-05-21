@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.security.PublicKey;
 
 /**
  * Created by AlexKotsc on 18-05-2015.

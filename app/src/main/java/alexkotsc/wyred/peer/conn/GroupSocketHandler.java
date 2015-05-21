@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.security.PublicKey;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,8 @@ public class GroupSocketHandler extends Thread {
     private final ThreadPoolExecutor pool = new ThreadPoolExecutor(10,10,10, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>());
 
     public GroupSocketHandler(Handler handler) throws IOException {
+
+
         try {
             serverSocket = new ServerSocket(4545);
             this.handler = handler;

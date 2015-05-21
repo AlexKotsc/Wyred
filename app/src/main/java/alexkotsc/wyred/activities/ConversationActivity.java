@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -102,12 +103,13 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
 
         ChatMessage cm = new ChatMessage();
         cm.isSender(true);
-        cm.setPeerPublicKey(currentPeer.getPublicKey() + "pk");
+        cm.setPeerPublicKey(currentPeer.getPublicKey());
         cm.setMessage(inputText.getText().toString());
 
         SQLiteDatabase db = wyredOpenHelper.getWritableDatabase();
 
         Long rowId = db.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, cm.generateInsertValues());
+        Log.d(TAG, "Inserting msg with public key at " + rowId + ": " + cm.getPeerPublicKey());
 
         db.close();
 
@@ -120,18 +122,23 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
         if(conMan != null){
             ChatMessage msg = fetchedMessages.get(0);
 
+            SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+
             msg.isSender(!msg.isSender());
-            msg.setPeerPublicKey(peerName + "pk");
+            msg.setPeerPublicKey(sp.getString("publicKey", null));
+
+            if(msg.getPeerPublicKey().equals(sp.getString("publicKey", null))){
+                Log.d(TAG, "Msg public peer, matches preferences.");
+            }
+
+            Log.d(TAG, "Sending msg with own public key: " + msg.getPeerPublicKey().hashCode());
 
             conMan.write(msg);
         } else {
             Log.e(TAG, "connection manager isn't set, couldn't send message.");
         }
-        //wifiPeerService.sendMessage(fetchedMessages.get(0));
 
         db.close();
-
-
 
         updateMessages();
         inputText.getText().clear();
@@ -145,12 +152,12 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
         wyredOpenHelper = new WyredOpenHelper(this);
 
         SQLiteDatabase database = wyredOpenHelper.getReadableDatabase();
-        Cursor results = database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?", new String[]{(currentPeer.getPublicKey() + "pk")}, null, null, null, null);
-        //Cursor results = database.query("wyred_messages", null, "publicKey = '" +  currentPeer.getPublicKey() + "'", null, null, null, null);
+        Cursor results =
+                database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?",
+                new String[]{(currentPeer.getPublicKey())}, null, null, null, null);
 
         messageCount = results.getCount();
 
-        Log.d(TAG, "Fetched: " + currentPeer.getPublicKey() + ", " + messageCount);
 
         newMessages = fetchMessages(results);
 
@@ -196,7 +203,7 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
 
         SQLiteDatabase db = wyredOpenHelper.getWritableDatabase();
 
-        int result = db.delete(WyredOpenHelper.TABLE_NAME_MESSAGES, "publicKey = ?", new String[]{currentPeer.getPublicKey() + "pk"});
+        int result = db.delete(WyredOpenHelper.TABLE_NAME_MESSAGES, "publicKey = ?", new String[]{currentPeer.getPublicKey()});
 
         Toast.makeText(this, "Deleted " + result + " messages.", Toast.LENGTH_SHORT).show();
 

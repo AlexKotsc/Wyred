@@ -26,9 +26,16 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import alexkotsc.wyred.activities.LoginActivity;
@@ -38,6 +45,7 @@ import alexkotsc.wyred.db.WyredOpenHelper;
 import alexkotsc.wyred.peer.ChatMessage;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
+import alexkotsc.wyred.util.KeyUtil;
 
 /**
  * Created by AlexKotsc on 22-04-2015.
@@ -80,6 +88,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     private WifiP2pGroup currentGroup;
 
     private RouteTable routeTable;
+    private LinkedList<ChatMessage> queuedMessages;
 
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo info) {
@@ -118,6 +127,20 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
     public void sendMessage(ChatMessage chatMessage) {
         Log.d(TAG, "Sending message: " + chatMessage.getDate());
+        queuedMessages.add(chatMessage);
+
+        sendMessages();
+    }
+
+    private void sendMessages() {
+        ChatMessage cm = null;
+        while((cm=queuedMessages.poll())!=null){
+            if(visiblePeers.containsKey(cm.getPeerPublicKey())){
+                connect(visiblePeers.get(cm.getPeerPublicKey()).getWifiP2pDevice());
+            } else {
+
+            }
+        }
     }
 
     @Override
@@ -125,14 +148,18 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         switch (msg.what){
             case ConnectionManager.ManagerHandle:
                 connectionManager = (ConnectionManager) msg.obj;
-                activity.setConnectionManager((ConnectionManager) connectionManager);
+                activity.setConnectionManager(connectionManager);
                 break;
             case ConnectionManager.ChatMessageObject:
                 ChatMessage cm = (ChatMessage) msg.obj;
 
+
+
                 SQLiteDatabase dbw = wyredOpenHelper.getWritableDatabase();
 
                 long rowIDw = dbw.insert(WyredOpenHelper.TABLE_NAME_MESSAGES, null, cm.generateInsertValues());
+
+                Log.d(TAG, cm.getPeerPublicKey());
 
                 dbw.close();
 
@@ -153,6 +180,8 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     @Override
     public void onCreate() {
         super.onCreate();
+
+        queuedMessages = new LinkedList<>();
 
         SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
 
@@ -290,8 +319,37 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
         Log.d(TAG, "starting service registration");
 
+        SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+        String publicKey = sp.getString("publicKey", null);
+
+        Log.d(TAG, "My publicKey: " + publicKey);
+
+        if(publicKey!=null){
+
+            int noOfSplits = (int) Math.ceil(publicKey.length()/50);
+
+            Log.d(TAG, "Splitting " + publicKey.length() + " into " + noOfSplits + " pieces.");
+
+            for(int i = 0; i<=noOfSplits; i++){
+
+                int startSubstring = i*50;
+                int stopSubstring = (i+1)*50;
+                Log.d(TAG, "Taking substring: " + startSubstring + ", " + stopSubstring);
+
+                String s = publicKey.substring(startSubstring, Math.min(stopSubstring,publicKey.length()));
+                record.put("publickeysplit" + i, s);
+
+            }
+
+            record.put("publickeysplits", String.valueOf(noOfSplits));
+
+        } else {
+            Log.e(TAG, "The publicKey was not set in shared preferences.. WTF man.");
+            record.put("publicKey", screenName);
+        }
+
         record.put("name", screenName);
-        record.put("publicKey", screenName);
+        //record.put("publicKey", screenName);
         record.put("available", "visible");
         record.put("wyred", "enabled");
 
@@ -368,7 +426,16 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         if (txtRecordMap.get("wyred") != null) {
             Peer peer = new Peer();
 
-            peer.setPublicKey(txtRecordMap.get("publicKey"));
+            int noOfSplits = Integer.valueOf(txtRecordMap.get("publickeysplits"));
+
+            StringBuilder publicKeyBuilder = new StringBuilder();
+
+            for(int i = 0; i<=noOfSplits; i++){
+                String s = txtRecordMap.get("publickeysplit" + i);
+                publicKeyBuilder.append(s);
+            }
+
+            peer.setPublicKey(publicKeyBuilder.toString());
             peer.setPeerName(txtRecordMap.get("name"));
             peer.setWifiP2pDevice(srcDevice);
 

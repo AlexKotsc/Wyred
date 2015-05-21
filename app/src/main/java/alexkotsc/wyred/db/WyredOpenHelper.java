@@ -29,7 +29,8 @@ public class WyredOpenHelper extends SQLiteOpenHelper {
             "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                     "username VARCHAR(50), " +
                     "password VARCHAR(50), " +
-                    "screenname VARCHAR(50));";
+                    "screenname VARCHAR(50)," +
+                    "publickey VARCHAR(500));";
 
     public WyredOpenHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

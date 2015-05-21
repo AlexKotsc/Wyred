@@ -1,5 +1,6 @@
 package alexkotsc.wyred.peer.conn;
 
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.util.Log;
 
@@ -9,6 +10,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.PublicKey;
+
+import javax.crypto.CipherOutputStream;
 
 import alexkotsc.wyred.peer.ChatMessage;
 
@@ -59,8 +63,8 @@ public class ConnectionManager implements Runnable {
 
                     if(obj instanceof alexkotsc.wyred.peer.ChatMessage){
                         ChatMessage cm = (ChatMessage) obj;
-                        handler.obtainMessage(ChatMessageObject, (ChatMessage) obj).sendToTarget();
-                        Log.d(TAG, "Received: " + cm.getPeerPublicKey());
+                        handler.obtainMessage(ChatMessageObject, obj).sendToTarget();
+                        Log.d(TAG, cm.getPeerPublicKey());
                     }
 
                 } catch (IOException e){
@@ -83,15 +87,6 @@ public class ConnectionManager implements Runnable {
             }
         }
     }
-
-    /*public void write(byte[] buffer){
-        try {
-            outputStream.write(buffer);
-            Log.d(TAG, "Finished writing: " + String.valueOf(buffer));
-        } catch (IOException e){
-            Log.e(TAG, "Exception during write", e);
-        }
-    }*/
 
     public void write(Object obj){
         try {

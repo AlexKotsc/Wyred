@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,6 +22,7 @@ import alexkotsc.wyred.db.WyredOpenHelper;
 
 public class LoginActivity extends ActionBarActivity {
 
+    private static final String TAG = "LoginActivity";
     WyredOpenHelper dbHelper;
 
     Button newUserBtn, clearBtn, submitBtn;
@@ -99,12 +101,6 @@ public class LoginActivity extends ActionBarActivity {
 
             Toast.makeText(this, "Login succesful.", Toast.LENGTH_SHORT).show();
 
-            SharedPreferences.Editor prefEditor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
-            prefEditor.putString("username", user);
-            prefEditor.putString("password", pass);
-            prefEditor.putString("screenname", screenName);
-            prefEditor.commit();
-
             Intent i = new Intent(this, PeerActivity.class);
             startActivity(i);
         } else {
@@ -120,6 +116,15 @@ public class LoginActivity extends ActionBarActivity {
 
         result.moveToFirst();
         if(result.getCount()==1){
+
+            SharedPreferences.Editor prefEditor = getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit();
+            prefEditor.putString("username", username);
+            prefEditor.putString("password", password);
+            prefEditor.putString("screenname", result.getString(result.getColumnIndex("screenname")));
+            prefEditor.putString("publicKey", result.getString(result.getColumnIndex("publickey")));
+            prefEditor.commit();
+
+            Log.d(TAG, "publickey: " + result.getString(result.getColumnIndex("publickey")).hashCode());
 
             db.close();
 
