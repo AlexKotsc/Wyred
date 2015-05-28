@@ -207,7 +207,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         temp.setPeerName("Test!");
         temp.setWifiP2pDevice(new WifiP2pDevice(null));
 
-        knownPeers.put(temp.getPublicKey(), temp);
+        //knownPeers.put(temp.getPublicKey(), temp);
 
         //Set route table from preference file if it is stored, else create new route table.
         if(sp.getString("routetable", null)!=null){
@@ -227,7 +227,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         routeEntry.setNextHop("nextHop");
         routeEntry.setTTL(100);
 
-        routeTable.addEntry(routeEntry);
+        //routeTable.addEntry(routeEntry);
         Log.d(TAG, "Routetable: " + gson.toJson(routeTable));
 
 
