@@ -26,16 +26,10 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import alexkotsc.wyred.activities.LoginActivity;
@@ -45,7 +39,6 @@ import alexkotsc.wyred.db.WyredOpenHelper;
 import alexkotsc.wyred.peer.ChatMessage;
 import alexkotsc.wyred.peer.IPeerActivity;
 import alexkotsc.wyred.peer.Peer;
-import alexkotsc.wyred.util.KeyUtil;
 
 /**
  * Created by AlexKotsc on 22-04-2015.
@@ -59,6 +52,10 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
     private WifiP2pManager mManager = null;
     private WifiP2pManager.Channel mChannel;
     private boolean serviceStarted = false;
+
+    public final String SERVICE_NAME = "service_name";
+    public final String SERVICE_KEY = "service_key";
+    public final String SERVICE_WYRED = "service_wyred";
 
     private WifiP2pDevice thisDevice;
     private BroadcastReceiver mReceiver;
@@ -319,7 +316,7 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
         Log.d(TAG, "starting service registration");
 
-        SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
+        /*SharedPreferences sp = getSharedPreferences(LoginActivity.PREF_NAME, MODE_PRIVATE);
         String publicKey = sp.getString("publicKey", null);
 
         Log.d(TAG, "My publicKey: " + publicKey);
@@ -346,12 +343,11 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
         } else {
             Log.e(TAG, "The publicKey was not set in shared preferences.. WTF man.");
             record.put("publicKey", screenName);
-        }
+        }*/
 
-        record.put("name", screenName);
-        //record.put("publicKey", screenName);
-        record.put("available", "visible");
-        record.put("wyred", "enabled");
+        record.put(SERVICE_NAME, screenName);
+        record.put(SERVICE_KEY, screenName);
+        record.put(SERVICE_WYRED, "enabled");
 
         WifiP2pDnsSdServiceInfo serviceInfo = WifiP2pDnsSdServiceInfo.newInstance(INSTANCE_NAME, REG_TYPE, record);
 
@@ -421,12 +417,12 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
 
     @Override
     public void onDnsSdTxtRecordAvailable(String fullDomainName, Map<String, String> txtRecordMap, WifiP2pDevice srcDevice) {
-        Log.d(TAG, "DnsSdTxtRecord: " + fullDomainName + ": " + txtRecordMap.get("wyred"));
+        Log.d(TAG, "DnsSdTxtRecord: " + fullDomainName + ": " + txtRecordMap.get(SERVICE_WYRED));
 
-        if (txtRecordMap.get("wyred") != null) {
+        if (txtRecordMap.get(SERVICE_WYRED) != null) {
             Peer peer = new Peer();
 
-            int noOfSplits = Integer.valueOf(txtRecordMap.get("publickeysplits"));
+            /*int noOfSplits = Integer.valueOf(txtRecordMap.get("publickeysplits"));
 
             StringBuilder publicKeyBuilder = new StringBuilder();
 
@@ -435,8 +431,10 @@ public class WifiPeerService extends Service implements WifiP2pManager.Connectio
                 publicKeyBuilder.append(s);
             }
 
-            peer.setPublicKey(publicKeyBuilder.toString());
-            peer.setPeerName(txtRecordMap.get("name"));
+            peer.setPublicKey(publicKeyBuilder.toString());*/
+
+            peer.setPublicKey(txtRecordMap.get(SERVICE_KEY));
+            peer.setPeerName(txtRecordMap.get(SERVICE_NAME));
             peer.setWifiP2pDevice(srcDevice);
 
             visiblePeers.put(peer.getPublicKey(), peer);

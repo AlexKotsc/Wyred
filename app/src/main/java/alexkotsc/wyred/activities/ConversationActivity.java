@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -52,6 +53,8 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
     private ListView messageList;
     private ConnectionManager conMan;
     private boolean connected = false;
+
+    Date d = new Date();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,7 +157,7 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
         SQLiteDatabase database = wyredOpenHelper.getReadableDatabase();
         Cursor results =
                 database.query(WyredOpenHelper.TABLE_NAME_MESSAGES, null, "publicKey = ?",
-                new String[]{(currentPeer.getPublicKey())}, null, null, null, null);
+                        new String[]{(currentPeer.getPublicKey())}, null, null, null, null);
 
         messageCount = results.getCount();
 
@@ -191,10 +194,45 @@ public class ConversationActivity extends ActionBarActivity implements IPeerActi
             case R.id.action_clear:
                 deleteMessages();
                 return true;
-
+            case R.id.action_test:
+                runTest();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void runTest() {
+        Log.d("WyredTest", "Starting test");
+
+        final int total = 100;
+
+        final long startTime = System.currentTimeMillis();
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                int tens = 0;
+
+                for(int i = 0; i<total; i++){
+                    if((i%10)==0 && i>0){
+                        tens++;
+                        Log.d("WyredTest", tens*10 + " messages sent: " + (System.currentTimeMillis() - startTime));
+                    }
+                    testMessage();
+                }
+            }
+        });
+
+        long stopTime = System.currentTimeMillis();
+        long elapsedTime = stopTime - startTime;
+        Log.d("WyredTest", "Sending " + total + " messages took: " + elapsedTime);
+    }
+
+    public void testMessage(){
+        inputText.setText("" + System.currentTimeMillis());
+        sendMessage();
     }
 
     private void deleteMessages() {

@@ -4,11 +4,8 @@ import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.security.KeyPairGeneratorSpec;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Base64;
-import android.util.Log;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,27 +13,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
-
-import javax.security.auth.x500.X500Principal;
 
 import alexkotsc.wyred.CreateUserAsyncTask;
 import alexkotsc.wyred.R;
 import alexkotsc.wyred.db.WyredOpenHelper;
-import alexkotsc.wyred.util.KeyUtil;
 
 
 public class UserActivity extends ActionBarActivity {
@@ -106,7 +87,8 @@ public class UserActivity extends ActionBarActivity {
         cv.put("username", username.getText().toString());
         cv.put("password", password.getText().toString());
         cv.put("screenname", screenname.getText().toString());
-        cv.put("publickey", KeyUtil.publicKeyToString(pk));
+        cv.put("publickey", screenname.getText().toString());
+        //cv.put("publickey", KeyUtil.publicKeyToString(pk));
 
         if(sqlWrite.insert(WyredOpenHelper.TABLE_NAME_USERS, null, cv)!=-1){
             Toast.makeText(this, "User created succesfully, you can now login.", Toast.LENGTH_LONG).show();

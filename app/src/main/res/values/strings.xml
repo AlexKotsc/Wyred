@@ -7,11 +7,11 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_test_wi_fi_p2_p">TestWiFiP2P</string>
     <string name="title_activity_wifi_p2_p">WifiP2P</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">Wyred</string>
     <string name="title_activity_blep2_p">BLEP2P</string>
     <string name="title_activity_key_generator">KeyGenerator</string>
-    <string name="title_activity_conversation">ConversationActivity</string>
+    <string name="title_activity_conversation">Conversation</string>
     <string name="title_activity_login">Wyred - Login</string>
     <string name="title_activity_peer">Wyred - Messages</string>
-    <string name="title_activity_user">UserActivity</string>
+    <string name="title_activity_user">Create user</string>
 </resources>
